@@ -1,0 +1,128 @@
+# ==========================================
+# 手工皮具创作分享平台 - Docker Compose 编排
+# 严格遵守端口绑定约束，所有服务只绑定 127.0.0.1
+# ==========================================
+version: '3.8'
+
+services:
+  # ==========================================
+  # MySQL 数据库
+  # ==========================================
+  mysql:
+    image: ${DOCKER_REGISTRY}mysql:8.0
+    container_name: ${COMPOSE_PROJECT_NAME}-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${TZ}
+    # 严格绑定 IPv4 回环地址
+    ports:
+      - "127.0.0.1:${MYSQL_PORT}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./backend/src/main/resources/db/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --bind-address=0.0.0.0
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - app-network
+
+  # ==========================================
+  # Redis 缓存
+  # ==========================================
+  redis:
+    image: ${DOCKER_REGISTRY}redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME}-redis
+    restart: unless-stopped
+    # 严格绑定 IPv4 回环地址
+    ports:
+      - "127.0.0.1:${REDIS_PORT}:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --bind 0.0.0.0
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "127.0.0.1", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - app-network
+
+  # ==========================================
+  # 后端服务 - Spring Boot
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY}
+    container_name: ${COMPOSE_PROJECT_NAME}-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # 严格绑定 IPv4 回环地址
+    ports:
+      - "127.0.0.1:${BACKEND_PORT}:9034"
+    environment:
+      TZ: ${TZ}
+      SERVER_PORT: 9034
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    networks:
+      - app-network
+
+  # ==========================================
+  # 前端服务 - Nginx
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        DOCKER_REGISTRY: ${DOCKER_REGISTRY}
+    container_name: ${COMPOSE_PROJECT_NAME}-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    # 严格绑定 IPv4 回环地址
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT}:80"
+    environment:
+      TZ: ${TZ}
+    networks:
+      - app-network
+
+# ==========================================
+# 数据卷
+# ==========================================
+volumes:
+  mysql-data:
+    name: ${COMPOSE_PROJECT_NAME}-mysql-data
+  redis-data:
+    name: ${COMPOSE_PROJECT_NAME}-redis-data
+
+# ==========================================
+# 网络
+# ==========================================
+networks:
+  app-network:
+    name: ${COMPOSE_PROJECT_NAME}-network
+    driver: bridge

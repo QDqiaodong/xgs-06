@@ -20,10 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements WorkService {
@@ -79,6 +83,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
             work.setImages(workImageMapper.selectImagesByWorkId(id, 1));
             work.setProcessImages(workImageMapper.selectImagesByWorkId(id, 2));
             loadWorkSteps(work);
+            work.setCraftHighlights(extractCraftHighlights(work));
             if (userId != null) {
                 work.setIsFavorite(checkFavorite(userId, id));
             }
@@ -174,6 +179,80 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
             return "carving";
         }
         return "other";
+    }
+
+    private static final List<String[]> CRAFT_KEYWORDS = Arrays.asList(
+        new String[]{"封边", "磨边", "边油", "抛光", "床面处理", "封边上色", "边缘处理"},
+        new String[]{"打孔", "打斩", "冲眼", "冲孔", "菱斩", "斩孔"},
+        new String[]{"缝线", "缝制", "双针缝", "马鞍缝", "手缝", "线迹", "麻线"},
+        new String[]{"上色", "染色", "涂色", "边油", "酒染", "丙烯"},
+        new String[]{"皮雕", "雕刻", "唐草", "植鞣雕", "印花", "压花"},
+        new String[]{"塑形", "起鼓", "定型", "塑型", "填充", "模具"},
+        new String[]{"五金安装", "四合扣", "气眼", "拉链", "铆钉", "按扣", "磁扣"},
+        new String[]{"裁切", "下料", "裁皮", "切割", "裁料"},
+        new String[]{"编织", "编织工艺", "皮编"},
+        new String[]{"削薄", "铲薄", "削边", "片料"}
+    );
+
+    private static final List<String> CRAFT_STANDARD_NAMES = Arrays.asList(
+        "封边", "打孔", "缝线", "上色", "皮雕", "塑形", "五金安装", "裁切", "编织", "削薄"
+    );
+
+    private List<String> extractCraftHighlights(Work work) {
+        Set<String> highlights = new LinkedHashSet<>();
+        StringBuilder allText = new StringBuilder();
+
+        if (work.getContent() != null) {
+            allText.append(work.getContent()).append(" ");
+        }
+        if (work.getMaterials() != null) {
+            allText.append(work.getMaterials()).append(" ");
+        }
+        if (work.getCraftSteps() != null) {
+            allText.append(work.getCraftSteps()).append(" ");
+        }
+        if (work.getSteps() != null) {
+            for (WorkStep step : work.getSteps()) {
+                if (step.getStepName() != null) {
+                    allText.append(step.getStepName()).append(" ");
+                }
+                if (step.getDescription() != null) {
+                    allText.append(step.getDescription()).append(" ");
+                }
+                if (step.getTips() != null) {
+                    allText.append(step.getTips()).append(" ");
+                }
+                if (step.getStepType() != null) {
+                    allText.append(mapStepTypeToName(step.getStepType())).append(" ");
+                }
+            }
+        }
+
+        String text = allText.toString().toLowerCase();
+
+        for (int i = 0; i < CRAFT_KEYWORDS.size(); i++) {
+            String[] keywords = CRAFT_KEYWORDS.get(i);
+            for (String keyword : keywords) {
+                if (text.contains(keyword.toLowerCase())) {
+                    highlights.add(CRAFT_STANDARD_NAMES.get(i));
+                    break;
+                }
+            }
+        }
+
+        return new ArrayList<>(highlights);
+    }
+
+    private String mapStepTypeToName(String stepType) {
+        switch (stepType) {
+            case "cutting": return "裁切";
+            case "sewing": return "缝线";
+            case "edge": return "封边";
+            case "hardware": return "五金安装";
+            case "shaping": return "塑形";
+            case "carving": return "皮雕";
+            default: return "";
+        }
     }
 
     @Override

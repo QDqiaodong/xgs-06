@@ -1,5 +1,5 @@
 <template>
-  <div class="work-detail" v-if="work">
+  <div class="work-detail">
     <van-nav-bar
       title="作品详情" left-arrow @click-left="$router.back()" fixed>
       <template #right>
@@ -7,12 +7,25 @@
       </template>
     </van-nav-bar>
 
-    <div class="detail-content">
-      <van-swipe class="image-swiper" :autoplay="3000" indicator-color="#fff">
-        <van-swipe-item v-for="(img, idx) in work.images" :key="idx">
+    <div class="detail-content" v-if="loading">
+      <van-loading class="detail-loading" type="spinner" color="#8b5a2b">加载中...</van-loading>
+    </div>
+
+    <div class="detail-content detail-empty" v-else-if="loadError">
+      <van-empty image="error" :description="loadError">
+        <van-button round type="primary" size="small" @click="loadWorkDetail">重新加载</van-button>
+      </van-empty>
+    </div>
+
+    <div class="detail-content" v-else-if="work">
+      <van-swipe v-if="displayImages.length" class="image-swiper" :autoplay="3000" indicator-color="#fff">
+        <van-swipe-item v-for="(img, idx) in displayImages" :key="idx">
           <img :src="img" alt="" />
         </van-swipe-item>
       </van-swipe>
+      <div v-else class="image-placeholder">
+        <van-icon name="photo-o" />
+      </div>
 
       <div class="work-info">
         <h1 class="title">{{ work.title }}</h1>
@@ -42,6 +55,24 @@
           <span><van-icon name="star-o" /> {{ work.favoriteCount }} 收藏</span>
         </div>
 
+        <div class="craft-highlights" v-if="work.craftHighlights && work.craftHighlights.length">
+          <div class="highlights-header">
+            <van-icon name="fire-o" class="fire-icon" />
+            <span class="highlights-title">工艺重点</span>
+          </div>
+          <div class="highlights-tags">
+            <div
+              v-for="(craft, idx) in work.craftHighlights"
+              :key="idx"
+              class="craft-tag"
+              :class="getCraftTagClass(craft)"
+            >
+              <span class="craft-icon">{{ getCraftIcon(craft) }}</span>
+              <span class="craft-name">{{ craft }}</span>
+            </div>
+          </div>
+        </div>
+
         <van-divider>作品介绍</van-divider>
         <p class="content-text">{{ work.content }}</p>
 
@@ -65,7 +96,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getWorkDetail, toggleFavorite } from '@/api'
 import { useUserStore } from '@/store/user'
@@ -76,12 +107,39 @@ import MaterialSummary from '@/components/MaterialSummary.vue'
 const route = useRoute()
 const userStore = useUserStore()
 const work = ref(null)
+const loading = ref(false)
+const loadError = ref('')
+
+const displayImages = computed(() => {
+  if (!work.value) return []
+  if (Array.isArray(work.value.images) && work.value.images.length) {
+    return work.value.images
+  }
+  return work.value.cover ? [work.value.cover] : []
+})
 
 const formatTime = (time) => {
   if (!time) return ''
   const date = new Date(time)
   return date.toLocaleDateString()
 }
+
+const craftStyleMap = {
+  '封边': { icon: '🎨', class: 'craft-edge' },
+  '打孔': { icon: '⚡', class: 'craft-punch' },
+  '缝线': { icon: '🧵', class: 'craft-sewing' },
+  '上色': { icon: '🖌️', class: 'craft-color' },
+  '皮雕': { icon: '🗡️', class: 'craft-carving' },
+  '塑形': { icon: '✨', class: 'craft-shaping' },
+  '五金安装': { icon: '🔩', class: 'craft-hardware' },
+  '裁切': { icon: '✂️', class: 'craft-cutting' },
+  '编织': { icon: '🧶', class: 'craft-weaving' },
+  '削薄': { icon: '📏', class: 'craft-thinning' }
+}
+
+const getCraftInfo = (name) => craftStyleMap[name] || { icon: '📌', class: 'craft-default' }
+const getCraftIcon = (name) => getCraftInfo(name).icon
+const getCraftTagClass = (name) => getCraftInfo(name).class
 
 const handleFavorite = async () => {
   if (!userStore.isLoggedIn()) {
@@ -94,9 +152,23 @@ const handleFavorite = async () => {
   showToast(work.value.isFavorite ? '收藏成功' : '已取消收藏')
 }
 
-onMounted(async () => {
-  work.value = await getWorkDetail(route.params.id, userStore.userInfo?.id)
-})
+const loadWorkDetail = async () => {
+  loading.value = true
+  loadError.value = ''
+  try {
+    work.value = await getWorkDetail(route.params.id, userStore.userInfo?.id)
+    if (!work.value) {
+      loadError.value = '作品不存在或已下架'
+    }
+  } catch (error) {
+    loadError.value = '作品加载失败，请稍后重试'
+    showToast(loadError.value)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadWorkDetail)
 </script>
 
 <style scoped>
@@ -109,6 +181,19 @@ onMounted(async () => {
   padding-top: 46px;
 }
 
+.detail-loading {
+  display: flex;
+  justify-content: center;
+  padding: 120px 0;
+}
+
+.detail-empty {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .image-swiper {
   width: 100%;
   aspect-ratio: 1/1;
@@ -118,6 +203,17 @@ onMounted(async () => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.image-placeholder {
+  width: 100%;
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f4ef;
+  color: #c8aa84;
+  font-size: 48px;
 }
 
 .work-info {
@@ -192,5 +288,124 @@ onMounted(async () => {
 .process-img {
   width: 100%;
   border-radius: 8px;
+}
+
+.craft-highlights {
+  background: linear-gradient(135deg, #fef7ed 0%, #fff5e6 100%);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #f5e6d3;
+}
+
+.highlights-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.fire-icon {
+  color: #ff6b35;
+  font-size: 18px;
+}
+
+.highlights-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #8b5a2b;
+}
+
+.highlights-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.craft-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.craft-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.craft-icon {
+  font-size: 14px;
+}
+
+.craft-edge {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+
+.craft-punch {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.craft-sewing {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+.craft-color {
+  background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
+  color: #c2185b;
+  border: 1px solid #f48fb1;
+}
+
+.craft-carving {
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+  color: #00838f;
+  border: 1px solid #80deea;
+}
+
+.craft-shaping {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  color: #6a1b9a;
+  border: 1px solid #ce93d8;
+}
+
+.craft-hardware {
+  background: linear-gradient(135deg, #fbe9e7 0%, #ffccbc 100%);
+  color: #d84315;
+  border: 1px solid #ffab91;
+}
+
+.craft-cutting {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.craft-weaving {
+  background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+  color: #f57f17;
+  border: 1px solid #fff59d;
+}
+
+.craft-thinning {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #33691e;
+  border: 1px solid #aed581;
+}
+
+.craft-default {
+  background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+  color: #616161;
+  border: 1px solid #e0e0e0;
 }
 </style>

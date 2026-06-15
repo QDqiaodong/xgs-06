@@ -45,8 +45,10 @@
         <van-divider>作品介绍</van-divider>
         <p class="content-text">{{ work.content }}</p>
 
-        <van-divider v-if="work.materials">用料说明</van-divider>
-        <p class="content-text" v-if="work.materials">{{ work.materials }}</p>
+        <van-divider v-if="work.materialSummary || work.materials">材料用量速览</van-divider>
+        <MaterialSummary v-if="work.materialSummary" :material-summary="work.materialSummary" />
+        <p class="content-text materials-text" v-if="work.materials && !work.materialSummary">{{ work.materials }}</p>
+        <p class="content-text materials-text" v-if="work.materials && work.materialSummary">{{ work.materials }}</p>
 
         <CraftStepReader v-if="work.steps && work.steps.length" :steps="work.steps" />
 
@@ -69,6 +71,7 @@ import { getWorkDetail, toggleFavorite } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast } from 'vant'
 import CraftStepReader from '@/components/CraftStepReader.vue'
+import MaterialSummary from '@/components/MaterialSummary.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -168,6 +171,16 @@ onMounted(async () => {
   line-height: 1.8;
   color: #333;
   white-space: pre-wrap;
+}
+
+.materials-text {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #888;
+  background: #faf7f3;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #d4b896;
 }
 
 .process-images {

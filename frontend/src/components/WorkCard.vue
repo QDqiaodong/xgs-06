@@ -12,6 +12,9 @@
           <van-icon name="star-o" /> {{ work.favoriteCount || 0 }}
         </span>
       </div>
+      <div class="card-materials" v-if="work.materialSummary">
+        <MaterialSummary :material-summary="work.materialSummary" compact />
+      </div>
       <div class="card-author">
         <van-image
           round
@@ -25,6 +28,8 @@
 </template>
 
 <script setup>
+import MaterialSummary from './MaterialSummary.vue'
+
 defineProps({
   work: {
     type: Object,
@@ -71,9 +76,13 @@ defineProps({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   font-size: 12px;
   color: #999;
+}
+
+.card-materials {
+  margin-bottom: 10px;
 }
 
 .category {

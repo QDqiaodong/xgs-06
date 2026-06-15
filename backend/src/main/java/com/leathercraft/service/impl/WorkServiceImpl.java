@@ -185,6 +185,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setCover(dto.getCover());
         work.setContent(dto.getContent());
         work.setMaterials(dto.getMaterials());
+        work.setMaterialSummary(dto.getMaterialSummary());
         work.setCraftSteps(dto.getCraftSteps());
         work.setCategoryId(dto.getCategoryId());
         work.setCraftTypeId(dto.getCraftTypeId());
@@ -211,6 +212,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setCover(dto.getCover());
         work.setContent(dto.getContent());
         work.setMaterials(dto.getMaterials());
+        work.setMaterialSummary(dto.getMaterialSummary());
         work.setCraftSteps(dto.getCraftSteps());
         work.setCategoryId(dto.getCategoryId());
         work.setCraftTypeId(dto.getCraftTypeId());

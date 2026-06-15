@@ -24,6 +24,8 @@ public class Work {
 
     private String materials;
 
+    private String materialSummary;
+
     private String craftSteps;
 
     private Long categoryId;
@@ -113,6 +115,14 @@ public class Work {
 
     public void setMaterials(String materials) {
         this.materials = materials;
+    }
+
+    public String getMaterialSummary() {
+        return materialSummary;
+    }
+
+    public void setMaterialSummary(String materialSummary) {
+        this.materialSummary = materialSummary;
     }
 
     public String getCraftSteps() {

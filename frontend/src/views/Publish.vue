@@ -59,7 +59,56 @@
           />
         </van-cell-group>
 
-        <van-cell-group inset title="详细信息">
+        <van-cell-group inset title="材料用量速览">
+          <div class="material-editor">
+            <div class="mat-section" v-for="section in materialSections" :key="section.key">
+              <div class="mat-section-header">
+                <span class="mat-icon">{{ section.icon }}</span>
+                <span class="mat-title">{{ section.label }}</span>
+                <van-button
+                  size="mini"
+                  type="primary"
+                  plain
+                  icon="plus"
+                  @click="addMaterialItem(section.key)"
+                >
+                  添加
+                </van-button>
+              </div>
+              <div
+                class="mat-item"
+                v-for="(item, idx) in form.materialSummaryObj[section.key]"
+                :key="idx"
+              >
+                <van-field
+                  v-model="item.name"
+                  placeholder="名称"
+                  class="mat-name-input"
+                />
+                <van-field
+                  v-model="item.spec"
+                  placeholder="规格"
+                  class="mat-spec-input"
+                />
+                <van-field
+                  v-model="item.quantity"
+                  placeholder="用量"
+                  class="mat-qty-input"
+                />
+                <van-icon
+                  name="delete-o"
+                  class="mat-delete"
+                  @click="removeMaterialItem(section.key, idx)"
+                />
+              </div>
+              <div class="mat-empty" v-if="!form.materialSummaryObj[section.key].length">
+                暂无{{ section.label }}，点击上方添加
+              </div>
+            </div>
+          </div>
+        </van-cell-group>
+
+        <van-cell-group inset title="用料描述（可选）">
           <van-field
             v-model="form.materials"
             label="用料"
@@ -228,6 +277,18 @@ const stepTypeMap = {
   other: { name: '其他', icon: '📝' }
 }
 
+const materialSections = [
+  { key: 'mainMaterials', label: '主材', icon: '🐂' },
+  { key: 'auxMaterials', label: '辅材', icon: '🔩' },
+  { key: 'tools', label: '工具', icon: '🛠️' }
+]
+
+const createEmptyMaterial = () => ({
+  name: '',
+  spec: '',
+  quantity: ''
+})
+
 const getStepTypeName = (type) => stepTypeMap[type]?.name || '请选择'
 
 const createEmptyStep = () => ({
@@ -245,10 +306,16 @@ const form = ref({
   title: '',
   content: '',
   materials: '',
+  materialSummary: '',
   craftSteps: '',
   categoryId: null,
   craftTypeId: null,
-  steps: [createEmptyStep()]
+  steps: [createEmptyStep()],
+  materialSummaryObj: {
+    mainMaterials: [],
+    auxMaterials: [],
+    tools: []
+  }
 })
 
 const fileList = ref([])
@@ -280,6 +347,14 @@ const removeStep = (idx) => {
     return
   }
   form.value.steps.splice(idx, 1)
+}
+
+const addMaterialItem = (sectionKey) => {
+  form.value.materialSummaryObj[sectionKey].push(createEmptyMaterial())
+}
+
+const removeMaterialItem = (sectionKey, idx) => {
+  form.value.materialSummaryObj[sectionKey].splice(idx, 1)
 }
 
 const openStepTypePicker = (idx) => {
@@ -359,12 +434,28 @@ const submit = async () => {
         images: (s._fileList || []).map(f => f.content || f.url || 'https://picsum.photos/400/300')
       }))
 
+    const materialSummaryData = {}
+    for (const section of materialSections) {
+      const items = form.value.materialSummaryObj[section.key]
+        .filter(item => item.name && item.name.trim())
+        .map(item => ({
+          name: item.name.trim(),
+          spec: item.spec?.trim() || '',
+          quantity: item.quantity?.trim() || ''
+        }))
+      if (items.length) {
+        materialSummaryData[section.key] = items
+      }
+    }
+    const hasMaterialSummary = Object.keys(materialSummaryData).length > 0
+
     await publishWork({
       ...form.value,
       cover: images[0],
       images,
       processImages,
-      steps: steps.length ? steps : undefined
+      steps: steps.length ? steps : undefined,
+      materialSummary: hasMaterialSummary ? JSON.stringify(materialSummaryData) : undefined
     }, userStore.userInfo.id)
 
     showToast('发布成功')
@@ -397,6 +488,74 @@ onMounted(async () => {
 
 .publish-content {
   padding-top: 46px;
+}
+
+.material-editor {
+  padding: 12px;
+}
+
+.mat-section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #f0e8df;
+}
+
+.mat-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #f0e8df;
+}
+
+.mat-icon {
+  font-size: 18px;
+}
+
+.mat-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #8b5a2b;
+  flex: 1;
+}
+
+.mat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  background: #faf7f3;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.mat-name-input {
+  flex: 2;
+}
+
+.mat-spec-input {
+  flex: 1.5;
+}
+
+.mat-qty-input {
+  flex: 1;
+}
+
+.mat-delete {
+  color: #ee0a24;
+  font-size: 18px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.mat-empty {
+  text-align: center;
+  color: #ccc;
+  font-size: 13px;
+  padding: 16px 0;
 }
 
 .steps-editor {

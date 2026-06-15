@@ -65,12 +65,13 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { login, register } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast } from 'vant'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 const form = ref({
@@ -91,7 +92,12 @@ const onSubmit = async () => {
     userStore.setUser(user)
     showToast('登录成功')
     setTimeout(() => {
-      router.back()
+      const redirect = route.query.redirect
+      if (redirect && typeof redirect === 'string') {
+        router.replace(redirect)
+      } else {
+        router.replace('/')
+      }
     }, 1000)
   } catch (e) {
     // error handled by interceptor

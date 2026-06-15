@@ -45,8 +45,30 @@ public class UserController {
     }
 
     @PutMapping
-    public Result<Void> update(@RequestBody User user) {
-        userService.updateById(user);
+    public Result<Void> update(@RequestBody User user, @RequestHeader(value = "userId", required = false) Long userIdHeader) {
+        if (userIdHeader == null) {
+            return Result.error("请先登录");
+        }
+        if (user.getId() == null) {
+            user.setId(userIdHeader);
+        }
+        if (!userIdHeader.equals(user.getId())) {
+            return Result.error("无权限修改他人资料");
+        }
+        User existUser = userService.getById(user.getId());
+        if (existUser == null) {
+            return Result.error("用户不存在");
+        }
+        if (user.getNickname() != null) {
+            existUser.setNickname(user.getNickname());
+        }
+        if (user.getAvatar() != null) {
+            existUser.setAvatar(user.getAvatar());
+        }
+        if (user.getBio() != null) {
+            existUser.setBio(user.getBio());
+        }
+        userService.updateUser(existUser);
         return Result.success();
     }
 }

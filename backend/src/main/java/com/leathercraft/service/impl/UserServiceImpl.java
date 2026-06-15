@@ -41,4 +41,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         save(user);
         return user;
     }
+
+    @Override
+    public void updateUser(User user) {
+        user.setUpdateTime(LocalDateTime.now());
+        updateById(user);
+    }
 }

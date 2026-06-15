@@ -62,6 +62,9 @@ public class Work {
     private List<String> processImages;
 
     @TableField(exist = false)
+    private List<WorkStep> steps;
+
+    @TableField(exist = false)
     private Boolean isFavorite;
 
     public Long getId() {
@@ -230,6 +233,14 @@ public class Work {
 
     public void setProcessImages(List<String> processImages) {
         this.processImages = processImages;
+    }
+
+    public List<WorkStep> getSteps() {
+        return steps;
+    }
+
+    public void setSteps(List<WorkStep> steps) {
+        this.steps = steps;
     }
 
     public Boolean getIsFavorite() {

@@ -38,15 +38,6 @@
           />
         </van-cell-group>
 
-        <van-cell-group inset title="制作过程图">
-          <van-uploader
-            v-model="processFileList"
-            multiple
-            :max-count="20"
-            :after-read="afterProcessRead"
-          />
-        </van-cell-group>
-
         <van-cell-group inset title="分类信息">
           <van-field
             v-model="showCategoryPicker"
@@ -76,12 +67,110 @@
             placeholder="使用了哪些皮料、五金、线等..."
             rows="2"
           />
+        </van-cell-group>
+
+        <van-cell-group inset title="工序步骤（分镜）">
+          <div class="steps-editor">
+            <div
+              v-for="(step, idx) in form.steps"
+              :key="idx"
+              class="step-editor-item"
+            >
+              <div class="step-header">
+                <span class="step-index">第 {{ idx + 1 }} 步</span>
+                <van-icon
+                  name="delete-o"
+                  class="delete-btn"
+                  @click="removeStep(idx)"
+                />
+              </div>
+
+              <van-field
+                v-model="step.stepName"
+                label="步骤名称"
+                placeholder="如：裁下料片"
+                maxlength="30"
+              />
+
+              <van-field
+                v-model="step.stepType"
+                is-link
+                readonly
+                label="步骤类型"
+                :value="getStepTypeName(step.stepType)"
+                placeholder="选择类型"
+                @click="openStepTypePicker(idx)"
+              />
+
+              <van-field
+                v-model="step.materials"
+                label="本步材料"
+                type="textarea"
+                placeholder="如：植鞣革2.0mm，裁皮刀"
+                rows="1"
+                maxlength="200"
+              />
+
+              <van-field
+                v-model="step.description"
+                label="操作说明"
+                type="textarea"
+                placeholder="详细描述本步骤的操作过程..."
+                rows="2"
+                maxlength="500"
+              />
+
+              <van-field
+                v-model="step.tips"
+                label="注意要点"
+                type="textarea"
+                placeholder="本步骤需要注意的技巧和坑点..."
+                rows="2"
+                maxlength="300"
+              />
+
+              <div class="step-images-upload">
+                <div class="upload-label">本步过程图</div>
+                <van-uploader
+                  v-model="step._fileList"
+                  multiple
+                  :max-count="5"
+                  :after-read="(file) => afterStepRead(file, idx)"
+                />
+              </div>
+
+              <div v-if="idx < form.steps.length - 1" class="step-divider"></div>
+            </div>
+
+            <van-button
+              block
+              plain
+              type="primary"
+              icon="plus"
+              @click="addStep"
+              class="add-step-btn"
+            >
+              添加工序步骤
+            </van-button>
+          </div>
+        </van-cell-group>
+
+        <van-cell-group inset title="旧版制作心得（可选）">
           <van-field
             v-model="form.craftSteps"
             label="制作心得"
             type="textarea"
-            placeholder="分享制作过程中的技巧和心得..."
+            placeholder="可选：简单的文本形式制作流程，或使用上面的结构化步骤..."
             rows="4"
+          />
+        </van-cell-group>
+
+        <van-cell-group inset title="过程图（可选，已绑定到步骤的可不传）">
+          <van-uploader
+            v-model="processFileList"
+            multiple
+            :max-count="20"
+            :after-read="afterProcessRead"
           />
         </van-cell-group>
       </van-form>
@@ -106,6 +195,16 @@
         @cancel="showCraftPicker = false"
       />
     </van-popup>
+
+    <van-popup v-model:show="showStepTypePicker" position="bottom" round>
+      <van-picker
+        :columns="stepTypeOptions"
+        show-toolbar
+        title="选择步骤类型"
+        @confirm="onStepTypeConfirm"
+        @cancel="showStepTypePicker = false"
+      />
+    </van-popup>
   </div>
 </template>
 
@@ -119,13 +218,37 @@ import { showToast } from 'vant'
 const router = useRouter()
 const userStore = useUserStore()
 
+const stepTypeMap = {
+  cutting: { name: '裁切', icon: '✂️' },
+  sewing: { name: '缝制', icon: '🧵' },
+  edge: { name: '封边', icon: '🎨' },
+  hardware: { name: '五金安装', icon: '🔩' },
+  shaping: { name: '塑形', icon: '✨' },
+  carving: { name: '皮雕', icon: '🗡️' },
+  other: { name: '其他', icon: '📝' }
+}
+
+const getStepTypeName = (type) => stepTypeMap[type]?.name || '请选择'
+
+const createEmptyStep = () => ({
+  stepName: '',
+  stepType: '',
+  materials: '',
+  tips: '',
+  description: '',
+  sort: 0,
+  images: [],
+  _fileList: []
+})
+
 const form = ref({
   title: '',
   content: '',
   materials: '',
   craftSteps: '',
   categoryId: null,
-  craftTypeId: null
+  craftTypeId: null,
+  steps: [createEmptyStep()]
 })
 
 const fileList = ref([])
@@ -133,19 +256,58 @@ const processFileList = ref([])
 const submitting = ref(false)
 const showCategoryPicker = ref(false)
 const showCraftPicker = ref(false)
+const showStepTypePicker = ref(false)
+const currentStepIndex = ref(-1)
 const categories = ref([])
 const craftTypes = ref([])
 const selectedCategoryName = ref('')
 const selectedCraftName = ref('')
 
+const stepTypeOptions = computed(() =>
+  Object.entries(stepTypeMap).map(([key, val]) => ({
+    text: `${val.icon} ${val.name}`,
+    id: key
+  }))
+)
+
+const addStep = () => {
+  form.value.steps.push(createEmptyStep())
+}
+
+const removeStep = (idx) => {
+  if (form.value.steps.length <= 1) {
+    showToast('至少保留一个步骤')
+    return
+  }
+  form.value.steps.splice(idx, 1)
+}
+
+const openStepTypePicker = (idx) => {
+  currentStepIndex.value = idx
+  showStepTypePicker.value = true
+}
+
+const onStepTypeConfirm = ({ selectedOptions }) => {
+  if (currentStepIndex.value >= 0) {
+    form.value.steps[currentStepIndex.value].stepType = selectedOptions[0].id
+  }
+  showStepTypePicker.value = false
+}
+
 const afterRead = (file) => {
-  // 模拟上传
   fileList.value = fileList.value.concat(file)
   form.value.cover = file[0]?.content || ''
 }
 
 const afterProcessRead = (file) => {
   processFileList.value = processFileList.value.concat(file)
+}
+
+const afterStepRead = (file, stepIdx) => {
+  if (!form.value.steps[stepIdx]._fileList) {
+    form.value.steps[stepIdx]._fileList = []
+  }
+  form.value.steps[stepIdx]._fileList = form.value.steps[stepIdx]._fileList.concat(file)
 }
 
 const onCategoryConfirm = ({ selectedOptions }) => {
@@ -184,12 +346,25 @@ const submit = async () => {
   try {
     const images = fileList.value.map(f => f.content || f.url || 'https://picsum.photos/400/300')
     const processImages = processFileList.value.map(f => f.content || f.url || 'https://picsum.photos/400/300')
-    
+
+    const steps = form.value.steps
+      .filter(s => s.stepName && s.stepName.trim())
+      .map((s, idx) => ({
+        stepName: s.stepName.trim(),
+        stepType: s.stepType,
+        materials: s.materials,
+        tips: s.tips,
+        description: s.description,
+        sort: idx,
+        images: (s._fileList || []).map(f => f.content || f.url || 'https://picsum.photos/400/300')
+      }))
+
     await publishWork({
       ...form.value,
       cover: images[0],
       images,
-      processImages
+      processImages,
+      steps: steps.length ? steps : undefined
     }, userStore.userInfo.id)
 
     showToast('发布成功')
@@ -222,5 +397,57 @@ onMounted(async () => {
 
 .publish-content {
   padding-top: 46px;
+}
+
+.steps-editor {
+  padding: 12px;
+}
+
+.step-editor-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 8px;
+}
+
+.step-index {
+  font-size: 15px;
+  font-weight: 600;
+  color: #8b5a2b;
+}
+
+.delete-btn {
+  color: #ee0a24;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.step-images-upload {
+  padding: 8px 12px;
+}
+
+.upload-label {
+  font-size: 13px;
+  color: #646566;
+  margin-bottom: 8px;
+}
+
+.step-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 12px 0;
+}
+
+.add-step-btn {
+  margin-top: 8px;
 }
 </style>

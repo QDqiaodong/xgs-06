@@ -13,6 +13,8 @@ public class WorkImage {
 
     private Long workId;
 
+    private Long stepId;
+
     private String imageUrl;
 
     private Integer type;
@@ -35,6 +37,14 @@ public class WorkImage {
 
     public void setWorkId(Long workId) {
         this.workId = workId;
+    }
+
+    public Long getStepId() {
+        return stepId;
+    }
+
+    public void setStepId(Long stepId) {
+        this.stepId = stepId;
     }
 
     public String getImageUrl() {

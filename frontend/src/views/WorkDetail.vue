@@ -16,7 +16,7 @@
 
       <div class="work-info">
         <h1 class="title">{{ work.title }}</h1>
-        
+
         <div class="author-row">
           <van-image round size="40" :src="work.avatar || 'https://img.yzcdn.cn/vant/cat.jpeg'" />
           <div class="author-info">
@@ -48,11 +48,13 @@
         <van-divider v-if="work.materials">用料说明</van-divider>
         <p class="content-text" v-if="work.materials">{{ work.materials }}</p>
 
-        <van-divider v-if="work.craftSteps">制作流程</van-divider>
-        <p class="content-text" v-if="work.craftSteps">{{ work.craftSteps }}</p>
+        <CraftStepReader v-if="work.steps && work.steps.length" :steps="work.steps" />
 
-        <van-divider v-if="work.processImages && work.processImages.length">过程记录</van-divider>
-        <div class="process-images" v-if="work.processImages && work.processImages.length">
+        <van-divider v-if="!work.steps || !work.steps.length">制作流程</van-divider>
+        <p class="content-text" v-if="(!work.steps || !work.steps.length) && work.craftSteps">{{ work.craftSteps }}</p>
+
+        <van-divider v-if="(!work.steps || !work.steps.length) && work.processImages && work.processImages.length">过程记录</van-divider>
+        <div class="process-images" v-if="(!work.steps || !work.steps.length) && work.processImages && work.processImages.length">
           <img v-for="(img, idx) in work.processImages" :key="idx" :src="img" alt="" class="process-img" />
         </div>
       </div>
@@ -66,6 +68,7 @@ import { useRoute } from 'vue-router'
 import { getWorkDetail, toggleFavorite } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast } from 'vant'
+import CraftStepReader from '@/components/CraftStepReader.vue'
 
 const route = useRoute()
 const userStore = useUserStore()

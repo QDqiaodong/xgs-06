@@ -1,13 +1,17 @@
 package com.leathercraft.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.leathercraft.dto.WorkPublishDTO;
+import com.leathercraft.dto.WorkStepDTO;
 import com.leathercraft.entity.Work;
 import com.leathercraft.entity.WorkImage;
+import com.leathercraft.entity.WorkStep;
 import com.leathercraft.mapper.WorkImageMapper;
 import com.leathercraft.mapper.WorkMapper;
+import com.leathercraft.mapper.WorkStepMapper;
 import com.leathercraft.service.WorkService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -15,14 +19,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements WorkService {
 
     @Autowired
     private WorkImageMapper workImageMapper;
+
+    @Autowired
+    private WorkStepMapper workStepMapper;
 
     @Autowired
     private FavoriteServiceImpl favoriteService;
@@ -52,11 +62,102 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         if (work != null) {
             work.setImages(workImageMapper.selectImagesByWorkId(id, 1));
             work.setProcessImages(workImageMapper.selectImagesByWorkId(id, 2));
+            loadWorkSteps(work);
             if (userId != null) {
                 work.setIsFavorite(checkFavorite(userId, id));
             }
         }
         return work;
+    }
+
+    private void loadWorkSteps(Work work) {
+        List<WorkStep> steps = workStepMapper.selectStepsByWorkId(work.getId());
+        if (steps != null && !steps.isEmpty()) {
+            steps.forEach(step -> {
+                step.setImages(workImageMapper.selectImagesByStepId(step.getId()));
+            });
+            work.setSteps(steps);
+        } else {
+            work.setSteps(parseCraftStepsFromText(work));
+        }
+    }
+
+    private List<WorkStep> parseCraftStepsFromText(Work work) {
+        List<WorkStep> steps = new ArrayList<>();
+        String craftSteps = work.getCraftSteps();
+        if (craftSteps == null || craftSteps.trim().isEmpty()) {
+            return steps;
+        }
+
+        Pattern pattern = Pattern.compile("(\\d+)\\.\\s*([^\n]+)");
+        Matcher matcher = pattern.matcher(craftSteps);
+        int sort = 0;
+        List<String> processImages = work.getProcessImages();
+
+        while (matcher.find()) {
+            WorkStep step = new WorkStep();
+            String stepName = matcher.group(2).trim();
+            step.setStepName(stepName);
+            step.setStepType(detectStepType(stepName));
+            step.setSort(sort);
+
+            if (processImages != null && sort < processImages.size()) {
+                List<String> stepImages = new ArrayList<>();
+                stepImages.add(processImages.get(sort));
+                step.setImages(stepImages);
+            }
+
+            steps.add(step);
+            sort++;
+        }
+
+        if (steps.isEmpty()) {
+            String[] lines = craftSteps.split("\n");
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i].trim();
+                if (!line.isEmpty()) {
+                    WorkStep step = new WorkStep();
+                    String cleanName = line.replaceAll("^\\d+[.、)\\s]+", "").trim();
+                    step.setStepName(cleanName.isEmpty() ? line : cleanName);
+                    step.setStepType(detectStepType(step.getStepName()));
+                    step.setSort(i);
+
+                    if (processImages != null && i < processImages.size()) {
+                        List<String> stepImages = new ArrayList<>();
+                        stepImages.add(processImages.get(i));
+                        step.setImages(stepImages);
+                    }
+
+                    steps.add(step);
+                }
+            }
+        }
+
+        return steps;
+    }
+
+    private String detectStepType(String stepName) {
+        if (stepName == null) return "other";
+        String lower = stepName.toLowerCase();
+        if (lower.contains("裁") || lower.contains("切") || lower.contains("下料") || lower.contains("cut")) {
+            return "cutting";
+        }
+        if (lower.contains("缝") || lower.contains("缝制") || lower.contains("sew") || lower.contains("stitch")) {
+            return "sewing";
+        }
+        if (lower.contains("封边") || lower.contains("磨边") || lower.contains("edge") || lower.contains("边油") || lower.contains("上色")) {
+            return "edge";
+        }
+        if (lower.contains("五金") || lower.contains("安装") || lower.contains("扣") || lower.contains("hardware")) {
+            return "hardware";
+        }
+        if (lower.contains("塑形") || lower.contains("起鼓") || lower.contains("shape")) {
+            return "shaping";
+        }
+        if (lower.contains("皮雕") || lower.contains("雕刻") || lower.contains("carve")) {
+            return "carving";
+        }
+        return "other";
     }
 
     @Override
@@ -78,8 +179,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setUpdateTime(LocalDateTime.now());
         save(work);
 
-        saveWorkImages(work.getId(), dto.getImages(), 1);
-        saveWorkImages(work.getId(), dto.getProcessImages(), 2);
+        saveWorkImages(work.getId(), null, dto.getImages(), 1);
+        saveWorkImages(work.getId(), null, dto.getProcessImages(), 2);
+        saveWorkSteps(work.getId(), dto.getSteps());
     }
 
     @Override
@@ -99,11 +201,14 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setUpdateTime(LocalDateTime.now());
         updateById(work);
 
-        workImageMapper.delete(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<WorkImage>()
+        workImageMapper.delete(new LambdaQueryWrapper<WorkImage>()
                 .eq(WorkImage::getWorkId, dto.getId()));
+        workStepMapper.delete(new LambdaQueryWrapper<WorkStep>()
+                .eq(WorkStep::getWorkId, dto.getId()));
 
-        saveWorkImages(work.getId(), dto.getImages(), 1);
-        saveWorkImages(work.getId(), dto.getProcessImages(), 2);
+        saveWorkImages(work.getId(), null, dto.getImages(), 1);
+        saveWorkImages(work.getId(), null, dto.getProcessImages(), 2);
+        saveWorkSteps(work.getId(), dto.getSteps());
     }
 
     @Override
@@ -150,7 +255,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         String key = WORK_VIEW_KEY + id;
         redisTemplate.opsForValue().increment(key);
         redisTemplate.expire(key, 1, TimeUnit.HOURS);
-        
+
         Work work = getById(id);
         if (work != null) {
             work.setViewCount(work.getViewCount() + 1);
@@ -158,16 +263,39 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         }
     }
 
-    private void saveWorkImages(Long workId, List<String> images, Integer type) {
+    private void saveWorkImages(Long workId, Long stepId, List<String> images, Integer type) {
         if (images != null && !images.isEmpty()) {
             for (int i = 0; i < images.size(); i++) {
                 WorkImage workImage = new WorkImage();
                 workImage.setWorkId(workId);
+                workImage.setStepId(stepId);
                 workImage.setImageUrl(images.get(i));
                 workImage.setType(type);
                 workImage.setSort(i);
                 workImage.setCreateTime(LocalDateTime.now());
                 workImageMapper.insert(workImage);
+            }
+        }
+    }
+
+    private void saveWorkSteps(Long workId, List<WorkStepDTO> stepDTOs) {
+        if (stepDTOs != null && !stepDTOs.isEmpty()) {
+            for (int i = 0; i < stepDTOs.size(); i++) {
+                WorkStepDTO dto = stepDTOs.get(i);
+                WorkStep step = new WorkStep();
+                step.setWorkId(workId);
+                step.setStepName(dto.getStepName());
+                step.setStepType(dto.getStepType());
+                step.setMaterials(dto.getMaterials());
+                step.setTips(dto.getTips());
+                step.setDescription(dto.getDescription());
+                step.setSort(dto.getSort() != null ? dto.getSort() : i);
+                step.setCreateTime(LocalDateTime.now());
+                workStepMapper.insert(step);
+
+                if (dto.getImages() != null && !dto.getImages().isEmpty()) {
+                    saveWorkImages(workId, step.getId(), dto.getImages(), 2);
+                }
             }
         }
     }

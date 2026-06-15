@@ -11,6 +11,9 @@ import java.util.List;
 @Mapper
 public interface WorkImageMapper extends BaseMapper<WorkImage> {
 
-    @Select("SELECT image_url FROM t_work_image WHERE work_id = #{workId} AND type = #{type} ORDER BY sort ASC")
+    @Select("SELECT image_url FROM t_work_image WHERE work_id = #{workId} AND type = #{type} AND step_id IS NULL ORDER BY sort ASC")
     List<String> selectImagesByWorkId(@Param("workId") Long workId, @Param("type") Integer type);
+
+    @Select("SELECT image_url FROM t_work_image WHERE step_id = #{stepId} ORDER BY sort ASC")
+    List<String> selectImagesByStepId(@Param("stepId") Long stepId);
 }

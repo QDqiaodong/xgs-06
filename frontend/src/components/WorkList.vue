@@ -16,7 +16,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { getWorkPage } from '@/api'
 import WorkCard from './WorkCard.vue'
 import { useUserStore } from '@/store/user'
@@ -48,26 +48,34 @@ const refreshing = ref(false)
 const page = ref(1)
 const pageSize = 10
 
-const fetchList = async () => {
+const fetchList = async (isRefresh = false) => {
+  if (loading.value) {
+    return
+  }
+
+  loading.value = true
+
   try {
     let data
+    const currentPage = page.value
+
     if (props.type === 'my') {
       const { getMyWorks } = await import('@/api')
       data = await getMyWorks({
-        page: page.value,
+        page: currentPage,
         size: pageSize,
         userId: props.userId
       })
     } else if (props.type === 'favorite') {
       const { getFavoriteWorks } = await import('@/api')
       data = await getFavoriteWorks({
-        page: page.value,
+        page: currentPage,
         size: pageSize,
         userId: props.userId
       })
     } else {
       data = await getWorkPage({
-        page: page.value,
+        page: currentPage,
         size: pageSize,
         categoryId: props.categoryId,
         craftTypeId: props.craftTypeId,
@@ -75,36 +83,47 @@ const fetchList = async () => {
       })
     }
 
-    if (refreshing.value) {
-      list.value = data.records
-      refreshing.value = false
+    const records = data?.records || []
+
+    if (isRefresh) {
+      list.value = records
     } else {
-      list.value = [...list.value, ...data.records]
+      list.value = [...list.value, ...records]
     }
 
-    loading.value = false
-
-    if (list.value.length >= data.total) {
+    if (records.length < pageSize || currentPage >= data.pages || list.value.length >= data.total) {
       finished.value = true
+    } else {
+      page.value = currentPage + 1
     }
   } catch (e) {
+    finished.value = true
+  } finally {
     loading.value = false
     refreshing.value = false
   }
 }
 
 const onLoad = () => {
-  page.value++
   fetchList()
 }
 
 const onRefresh = () => {
-  finished.value = false
   page.value = 1
-  fetchList()
+  finished.value = false
+  fetchList(true)
 }
 
-fetchList()
+watch(
+  () => [props.categoryId, props.craftTypeId, props.userId, props.type],
+  () => {
+    list.value = []
+    page.value = 1
+    finished.value = false
+    fetchList(true)
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>

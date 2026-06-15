@@ -9,14 +9,16 @@ services:
   # MySQL 数据库
   # ==========================================
   mysql:
-    image: ${DOCKER_REGISTRY}mysql:8.0
+    image: ${DOCKER_REGISTRY}mariadb:10.11
     container_name: ${COMPOSE_PROJECT_NAME}-mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: "%"
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_INITDB_SKIP_TZINFO: 1
       TZ: ${TZ}
     # 严格绑定 IPv4 回环地址
     ports:
@@ -29,7 +31,7 @@ services:
       - --collation-server=utf8mb4_unicode_ci
       - --bind-address=0.0.0.0
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mysql", "--protocol=TCP", "-h", "127.0.0.1", "-u${MYSQL_USER}", "-p${MYSQL_PASSWORD}", "${MYSQL_DATABASE}", "-e", "SELECT 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -82,8 +84,8 @@ services:
       TZ: ${TZ}
       SERVER_PORT: 9034
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
     networks:

@@ -45,8 +45,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
     @Override
     public IPage<Work> getWorkPage(Integer page, Integer size, Long categoryId, Long craftTypeId, Long userId) {
-        Page<Work> pageParam = new Page<>(page, size);
+        Page<Work> pageParam = buildPage(page, size);
         IPage<Work> result = baseMapper.selectWorkPage(pageParam, categoryId, craftTypeId);
+        markFinishedIfOverflow(result);
         result.getRecords().forEach(work -> {
             work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), 1));
             if (userId != null) {
@@ -54,6 +55,21 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
             }
         });
         return result;
+    }
+
+    private Page<Work> buildPage(Integer page, Integer size) {
+        long current = page == null || page < 1 ? 1 : page;
+        long pageSize = size == null || size < 1 ? 10 : Math.min(size, 50);
+        return new Page<>(current, pageSize);
+    }
+
+    private void markFinishedIfOverflow(IPage<Work> result) {
+        if (result.getRecords().isEmpty()
+                && result.getTotal() > 0
+                && result.getPages() > 0
+                && result.getCurrent() > result.getPages()) {
+            result.setTotal(0);
+        }
     }
 
     @Override
@@ -224,8 +240,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
     @Override
     public IPage<Work> getUserWorks(Integer page, Integer size, Long userId) {
-        Page<Work> pageParam = new Page<>(page, size);
+        Page<Work> pageParam = buildPage(page, size);
         IPage<Work> result = baseMapper.selectUserWorks(pageParam, userId);
+        markFinishedIfOverflow(result);
         result.getRecords().forEach(work -> {
             work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), 1));
         });
@@ -234,8 +251,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
     @Override
     public IPage<Work> getFavoriteWorks(Integer page, Integer size, Long userId) {
-        Page<Work> pageParam = new Page<>(page, size);
+        Page<Work> pageParam = buildPage(page, size);
         IPage<Work> result = baseMapper.selectFavoriteWorks(pageParam, userId);
+        markFinishedIfOverflow(result);
         result.getRecords().forEach(work -> {
             work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), 1));
             work.setIsFavorite(true);

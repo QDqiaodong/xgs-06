@@ -27,7 +27,7 @@ public class UserController {
     @PostMapping("/register")
     public Result<User> register(@RequestBody LoginDTO dto) {
         try {
-            User user = userService.register(dto.getUsername(), dto.getPassword(), null);
+            User user = userService.register(dto.getUsername(), dto.getPassword(), dto.getNickname());
             user.setPassword(null);
             return Result.success(user);
         } catch (Exception e) {

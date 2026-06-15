@@ -1,6 +1,5 @@
 package com.leathercraft.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -92,6 +91,12 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     @Override
     public Work getWorkDetail(Long id, Long userId) {
         Work work = baseMapper.selectWorkDetail(id);
+        if (work == null && userId != null) {
+            Work anyStatusWork = baseMapper.selectWorkDetailAnyStatus(id);
+            if (anyStatusWork != null && anyStatusWork.getUserId().equals(userId)) {
+                work = anyStatusWork;
+            }
+        }
         if (work != null) {
             work.setImages(workImageMapper.selectImagesByWorkId(id, 1));
             work.setProcessImages(workImageMapper.selectImagesByWorkId(id, 2));
@@ -255,7 +260,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         Work work = new Work();
         work.setUserId(userId);
         work.setTitle(dto.getTitle());
-        work.setCover(dto.getCover());
+        syncCoverFromImages(work, dto.getCover(), dto.getImages());
         work.setContent(dto.getContent());
         work.setMaterials(dto.getMaterials());
         work.setMaterialSummary(dto.getMaterialSummary());
@@ -282,7 +287,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
             throw new RuntimeException("无权限修改");
         }
         work.setTitle(dto.getTitle());
-        work.setCover(dto.getCover());
+        syncCoverFromImages(work, dto.getCover(), dto.getImages());
         work.setContent(dto.getContent());
         work.setMaterials(dto.getMaterials());
         work.setMaterialSummary(dto.getMaterialSummary());
@@ -292,10 +297,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setUpdateTime(LocalDateTime.now());
         updateById(work);
 
-        workImageMapper.delete(new LambdaQueryWrapper<WorkImage>()
-                .eq(WorkImage::getWorkId, dto.getId()));
-        workStepMapper.delete(new LambdaQueryWrapper<WorkStep>()
-                .eq(WorkStep::getWorkId, dto.getId()));
+        cleanupWorkImages(dto.getId());
 
         saveWorkImages(work.getId(), null, dto.getImages(), 1);
         saveWorkImages(work.getId(), null, dto.getProcessImages(), 2);
@@ -303,6 +305,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     }
 
     @Override
+    @Transactional
     public void offlineWork(Long id, Long userId) {
         Work work = getById(id);
         if (work == null || !work.getUserId().equals(userId)) {
@@ -311,6 +314,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setStatus(0);
         work.setUpdateTime(LocalDateTime.now());
         updateById(work);
+        cleanupWorkImages(id);
     }
 
     @Override
@@ -390,6 +394,43 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
                     saveWorkImages(workId, step.getId(), dto.getImages(), 2);
                 }
             }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteWork(Long id, Long userId) {
+        Work work = getById(id);
+        if (work == null || !work.getUserId().equals(userId)) {
+            throw new RuntimeException("无权限操作");
+        }
+        cleanupWorkImages(id);
+        removeById(id);
+    }
+
+    private void cleanupWorkImages(Long workId) {
+        workImageMapper.deleteStepImagesByWorkId(workId);
+        workImageMapper.deleteByWorkId(workId);
+        workStepMapper.deleteByWorkId(workId);
+    }
+
+    private void syncCoverFromImages(Work work, String rawCover, List<String> images) {
+        if (images != null && !images.isEmpty()) {
+            String firstImage = images.get(0);
+            if (rawCover != null && !rawCover.isEmpty()) {
+                boolean coverInImages = false;
+                for (String img : images) {
+                    if (img != null && img.equals(rawCover)) {
+                        coverInImages = true;
+                        break;
+                    }
+                }
+                work.setCover(coverInImages ? rawCover : firstImage);
+            } else {
+                work.setCover(firstImage);
+            }
+        } else {
+            work.setCover(rawCover);
         }
     }
 

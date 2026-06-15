@@ -13,6 +13,7 @@ public interface WorkService extends IService<Work> {
     void publishWork(WorkPublishDTO dto, Long userId);
     void updateWork(WorkPublishDTO dto, Long userId);
     void offlineWork(Long id, Long userId);
+    void deleteWork(Long id, Long userId);
     IPage<Work> getUserWorks(Integer page, Integer size, Long userId);
     IPage<Work> getFavoriteWorks(Integer page, Integer size, Long userId);
     List<Work> getHotWorks();

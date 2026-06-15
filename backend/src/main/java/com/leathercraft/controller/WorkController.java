@@ -51,6 +51,12 @@ public class WorkController {
         return Result.success();
     }
 
+    @DeleteMapping("/{id}/permanent")
+    public Result<Void> deleteWork(@PathVariable Long id, @RequestParam Long userId) {
+        workService.deleteWork(id, userId);
+        return Result.success();
+    }
+
     @GetMapping("/my")
     public Result<IPage<Work>> getUserWorks(
             @RequestParam(defaultValue = "1") Integer page,

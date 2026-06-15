@@ -18,9 +18,14 @@
     </div>
 
     <div class="detail-content" v-else-if="work">
+      <div class="offline-banner" v-if="work.status === 0">
+        <van-icon name="warning-o" />
+        <span>该作品已下架，仅作者可查看</span>
+      </div>
+
       <van-swipe v-if="displayImages.length" class="image-swiper" :autoplay="3000" indicator-color="#fff">
         <van-swipe-item v-for="(img, idx) in displayImages" :key="idx">
-          <img :src="img" alt="" />
+          <img :src="img" alt="" @error="onImageError(idx, 'display')" />
         </van-swipe-item>
       </van-swipe>
       <div v-else class="image-placeholder">
@@ -86,9 +91,9 @@
         <van-divider v-if="!work.steps || !work.steps.length">制作流程</van-divider>
         <p class="content-text" v-if="(!work.steps || !work.steps.length) && work.craftSteps">{{ work.craftSteps }}</p>
 
-        <van-divider v-if="(!work.steps || !work.steps.length) && work.processImages && work.processImages.length">过程记录</van-divider>
-        <div class="process-images" v-if="(!work.steps || !work.steps.length) && work.processImages && work.processImages.length">
-          <img v-for="(img, idx) in work.processImages" :key="idx" :src="img" alt="" class="process-img" />
+        <van-divider v-if="validProcessImages.length">过程记录</van-divider>
+        <div class="process-images" v-if="validProcessImages.length">
+          <img v-for="(img, idx) in validProcessImages" :key="idx" :src="img" alt="" class="process-img" @error="onImageError(idx, 'process')" />
         </div>
       </div>
     </div>
@@ -109,14 +114,28 @@ const userStore = useUserStore()
 const work = ref(null)
 const loading = ref(false)
 const loadError = ref('')
+const failedImages = ref(new Set())
 
 const displayImages = computed(() => {
   if (!work.value) return []
   if (Array.isArray(work.value.images) && work.value.images.length) {
-    return work.value.images
+    return work.value.images.filter((img, idx) => !failedImages.value.has(`display-${idx}`))
   }
-  return work.value.cover ? [work.value.cover] : []
+  if (work.value.cover && !failedImages.value.has('display-0')) {
+    return [work.value.cover]
+  }
+  return []
 })
+
+const validProcessImages = computed(() => {
+  if (!work.value || !work.value.processImages) return []
+  return work.value.processImages.filter((img, idx) => !failedImages.value.has(`process-${idx}`))
+})
+
+const onImageError = (idx, type) => {
+  failedImages.value.add(`${type}-${idx}`)
+  failedImages.value = new Set(failedImages.value)
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -157,6 +176,7 @@ const handleFavorite = async () => {
 const loadWorkDetail = async (retryCount = 8) => {
   loading.value = true
   loadError.value = ''
+  failedImages.value = new Set()
   try {
     for (let attempt = 0; attempt <= retryCount; attempt++) {
       try {
@@ -204,6 +224,17 @@ onMounted(() => loadWorkDetail())
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: #fffbe8;
+  color: #ed6a0c;
+  font-size: 13px;
+  border-bottom: 1px solid #ffe58f;
 }
 
 .image-swiper {

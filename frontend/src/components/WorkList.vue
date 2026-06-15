@@ -8,7 +8,14 @@
       @load="onLoad"
     >
       <div class="work-grid">
-        <WorkCard v-for="work in list" :key="work.id" :work="work" />
+        <van-swipe-cell v-if="type === 'my'" v-for="work in list" :key="work.id">
+          <WorkCard :work="work" />
+          <template #right>
+            <van-button square type="warning" class="swipe-btn" text="下架" @click="handleOffline(work)" />
+            <van-button square type="danger" class="swipe-btn" text="删除" @click="handleDelete(work)" />
+          </template>
+        </van-swipe-cell>
+        <WorkCard v-if="type !== 'my'" v-for="work in list" :key="work.id" :work="work" />
       </div>
     </van-list>
     </van-pull-refresh>
@@ -17,9 +24,10 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { getWorkPage } from '@/api'
+import { getWorkPage, offlineWork, deleteWork } from '@/api'
 import WorkCard from './WorkCard.vue'
 import { useUserStore } from '@/store/user'
+import { showToast, showConfirmDialog } from 'vant'
 
 const props = defineProps({
   categoryId: {
@@ -104,6 +112,24 @@ const fetchList = async (isRefresh = false) => {
   }
 }
 
+const handleOffline = async (work) => {
+  try {
+    await showConfirmDialog({ title: '确认下架', message: '下架后作品图片和步骤将被清理，确认下架吗？' })
+    await offlineWork(work.id, props.userId)
+    showToast('已下架')
+    list.value = list.value.filter(w => w.id !== work.id)
+  } catch {}
+}
+
+const handleDelete = async (work) => {
+  try {
+    await showConfirmDialog({ title: '确认删除', message: '删除后不可恢复，确认删除吗？' })
+    await deleteWork(work.id, props.userId)
+    showToast('已删除')
+    list.value = list.value.filter(w => w.id !== work.id)
+  } catch {}
+}
+
 const onLoad = () => {
   fetchList()
 }
@@ -135,5 +161,9 @@ watch(
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+
+.swipe-btn {
+  height: 100%;
 }
 </style>

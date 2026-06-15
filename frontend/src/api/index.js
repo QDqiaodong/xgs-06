@@ -15,6 +15,7 @@ export const getWorkDetail = (id, userId, config = {}) => request.get(`/work/${i
 export const publishWork = (data, userId) => request.post('/work', data, { params: { userId } })
 export const updateWork = (data, userId) => request.put('/work', data, { params: { userId } })
 export const offlineWork = (id, userId) => request.delete(`/work/${id}`, { params: { userId } })
+export const deleteWork = (id, userId) => request.delete(`/work/${id}/permanent`, { params: { userId } })
 export const getMyWorks = (params) => request.get('/work/my', { params })
 export const getFavoriteWorks = (params) => request.get('/work/favorite', { params })
 export const getHotWorks = () => request.get('/work/hot')

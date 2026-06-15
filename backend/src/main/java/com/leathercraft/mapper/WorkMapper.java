@@ -32,6 +32,13 @@ public interface WorkMapper extends BaseMapper<Work> {
             "FROM t_work w LEFT JOIN t_user u ON w.user_id = u.id " +
             "LEFT JOIN t_category c ON w.category_id = c.id " +
             "LEFT JOIN t_category ct ON w.craft_type_id = ct.id " +
+            "WHERE w.id = #{id} AND w.deleted = 0")
+    Work selectWorkDetailAnyStatus(@Param("id") Long id);
+
+    @Select("SELECT w.*, u.nickname, u.avatar, c.name as categoryName, ct.name as craftTypeName " +
+            "FROM t_work w LEFT JOIN t_user u ON w.user_id = u.id " +
+            "LEFT JOIN t_category c ON w.category_id = c.id " +
+            "LEFT JOIN t_category ct ON w.craft_type_id = ct.id " +
             "WHERE w.user_id = #{userId} AND w.deleted = 0 " +
             "ORDER BY w.create_time DESC")
     IPage<Work> selectUserWorks(Page<Work> page, @Param("userId") Long userId);

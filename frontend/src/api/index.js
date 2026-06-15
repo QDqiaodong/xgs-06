@@ -8,7 +8,10 @@ export const updateUser = (data) => request.put('/user', data)
 export const getCategories = (type) => request.get('/category/list', { params: { type } })
 
 export const getWorkPage = (params) => request.get('/work/page', { params })
-export const getWorkDetail = (id, userId) => request.get(`/work/${id}`, { params: { userId } })
+export const getWorkDetail = (id, userId, config = {}) => request.get(`/work/${id}`, {
+  ...config,
+  params: { userId, ...(config.params || {}) }
+})
 export const publishWork = (data, userId) => request.post('/work', data, { params: { userId } })
 export const updateWork = (data, userId) => request.put('/work', data, { params: { userId } })
 export const offlineWork = (id, userId) => request.delete(`/work/${id}`, { params: { userId } })

@@ -69,9 +69,6 @@ public class Work {
     @TableField(exist = false)
     private Boolean isFavorite;
 
-    @TableField(exist = false)
-    private List<String> craftHighlights;
-
     public Long getId() {
         return id;
     }
@@ -262,13 +259,5 @@ public class Work {
 
     public void setIsFavorite(Boolean isFavorite) {
         this.isFavorite = isFavorite;
-    }
-
-    public List<String> getCraftHighlights() {
-        return craftHighlights;
-    }
-
-    public void setCraftHighlights(List<String> craftHighlights) {
-        this.craftHighlights = craftHighlights;
     }
 }

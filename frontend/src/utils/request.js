@@ -27,12 +27,16 @@ request.interceptors.response.use(
     if (res.code === 200) {
       return res.data
     } else {
-      showToast(res.message || '请求失败')
+      if (!response.config?.silentError) {
+        showToast(res.message || '请求失败')
+      }
       return Promise.reject(new Error(res.message || '请求失败'))
     }
   },
   (error) => {
-    showToast(error.message || '网络错误')
+    if (!error.config?.silentError) {
+      showToast(error.message || '网络错误')
+    }
     return Promise.reject(error)
   }
 )

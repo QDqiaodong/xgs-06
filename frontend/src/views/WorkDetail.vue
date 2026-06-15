@@ -13,7 +13,7 @@
 
     <div class="detail-content detail-empty" v-else-if="loadError">
       <van-empty image="error" :description="loadError">
-        <van-button round type="primary" size="small" @click="loadWorkDetail">重新加载</van-button>
+        <van-button round type="primary" size="small" @click="loadWorkDetail()">重新加载</van-button>
       </van-empty>
     </div>
 
@@ -118,6 +118,8 @@ const displayImages = computed(() => {
   return work.value.cover ? [work.value.cover] : []
 })
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 const formatTime = (time) => {
   if (!time) return ''
   const date = new Date(time)
@@ -152,13 +154,23 @@ const handleFavorite = async () => {
   showToast(work.value.isFavorite ? '收藏成功' : '已取消收藏')
 }
 
-const loadWorkDetail = async () => {
+const loadWorkDetail = async (retryCount = 8) => {
   loading.value = true
   loadError.value = ''
   try {
-    work.value = await getWorkDetail(route.params.id, userStore.userInfo?.id)
-    if (!work.value) {
-      loadError.value = '作品不存在或已下架'
+    for (let attempt = 0; attempt <= retryCount; attempt++) {
+      try {
+        work.value = await getWorkDetail(route.params.id, userStore.userInfo?.id, { silentError: true })
+        if (!work.value) {
+          loadError.value = '作品不存在或已下架'
+        }
+        return
+      } catch (error) {
+        if (attempt === retryCount) {
+          throw error
+        }
+        await sleep(2500)
+      }
     }
   } catch (error) {
     loadError.value = '作品加载失败，请稍后重试'
@@ -168,7 +180,7 @@ const loadWorkDetail = async () => {
   }
 }
 
-onMounted(loadWorkDetail)
+onMounted(() => loadWorkDetail())
 </script>
 
 <style scoped>
@@ -330,13 +342,6 @@ onMounted(loadWorkDetail)
   border-radius: 20px;
   font-size: 13px;
   font-weight: 500;
-  transition: all 0.2s ease;
-  cursor: default;
-}
-
-.craft-tag:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .craft-icon {

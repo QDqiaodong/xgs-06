@@ -43,6 +43,23 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     private static final String HOT_WORKS_KEY = "hot:works";
     private static final String WORK_VIEW_KEY = "work:view:";
 
+    private static final String[][] CRAFT_KEYWORDS = {
+        {"封边", "磨边", "边油", "床面", "封边上色"},
+        {"打孔", "打斩", "冲孔", "斩孔", "菱斩"},
+        {"缝线", "缝制", "手缝", "马鞍缝", "双针", "线迹"},
+        {"上色", "染色", "涂色", "皮雕上色"},
+        {"皮雕", "雕刻", "雕花", "唐草"},
+        {"塑形", "起鼓", "塑型", "定型"},
+        {"五金安装", "五金", "四合扣", "气眼", "铆钉", "拉链", "扣"},
+        {"裁切", "裁皮", "下料", "切割", "裁断"},
+        {"编织", "编", "织"},
+        {"削薄", "削边", "薄削", "铲薄"}
+    };
+
+    private static final String[] CRAFT_NAMES = {
+        "封边", "打孔", "缝线", "上色", "皮雕", "塑形", "五金安装", "裁切", "编织", "削薄"
+    };
+
     @Override
     public IPage<Work> getWorkPage(Integer page, Integer size, Long categoryId, Long craftTypeId, Long userId) {
         Page<Work> pageParam = buildPage(page, size);
@@ -79,6 +96,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
             work.setImages(workImageMapper.selectImagesByWorkId(id, 1));
             work.setProcessImages(workImageMapper.selectImagesByWorkId(id, 2));
             loadWorkSteps(work);
+            extractCraftHighlights(work);
             if (userId != null) {
                 work.setIsFavorite(checkFavorite(userId, id));
             }
@@ -174,6 +192,61 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
             return "carving";
         }
         return "other";
+    }
+
+    private void extractCraftHighlights(Work work) {
+        List<String> highlights = new ArrayList<>();
+        boolean[] found = new boolean[CRAFT_NAMES.length];
+
+        StringBuilder allText = new StringBuilder();
+        if (work.getTitle() != null) {
+            allText.append(work.getTitle()).append(" ");
+        }
+        if (work.getContent() != null) {
+            allText.append(work.getContent()).append(" ");
+        }
+        if (work.getCraftSteps() != null) {
+            allText.append(work.getCraftSteps()).append(" ");
+        }
+        if (work.getMaterials() != null) {
+            allText.append(work.getMaterials()).append(" ");
+        }
+
+        List<WorkStep> steps = work.getSteps();
+        if (steps != null) {
+            for (WorkStep step : steps) {
+                if (step.getStepName() != null) {
+                    allText.append(step.getStepName()).append(" ");
+                }
+                if (step.getDescription() != null) {
+                    allText.append(step.getDescription()).append(" ");
+                }
+                if (step.getTips() != null) {
+                    allText.append(step.getTips()).append(" ");
+                }
+                if (step.getMaterials() != null) {
+                    allText.append(step.getMaterials()).append(" ");
+                }
+            }
+        }
+
+        String text = allText.toString();
+        for (int i = 0; i < CRAFT_KEYWORDS.length; i++) {
+            for (String keyword : CRAFT_KEYWORDS[i]) {
+                if (text.contains(keyword)) {
+                    found[i] = true;
+                    break;
+                }
+            }
+        }
+
+        for (int i = 0; i < CRAFT_NAMES.length; i++) {
+            if (found[i]) {
+                highlights.add(CRAFT_NAMES[i]);
+            }
+        }
+
+        work.setCraftHighlights(highlights);
     }
 
     @Override

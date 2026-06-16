@@ -29,8 +29,11 @@ public class WorkController {
 
     @GetMapping("/{id}")
     public Result<Work> getWorkDetail(@PathVariable Long id, @RequestParam(required = false) Long userId) {
-        workService.incrementViewCount(id);
-        return Result.success(workService.getWorkDetail(id, userId));
+        Work work = workService.getWorkDetail(id, userId);
+        if (work != null) {
+            workService.incrementViewCount(id);
+        }
+        return Result.success(work);
     }
 
     @PostMapping

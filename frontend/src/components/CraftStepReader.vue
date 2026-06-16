@@ -132,6 +132,8 @@ const currentIndex = ref(0)
 const previewIndex = ref(0)
 const tabsRef = ref(null)
 const touchStartX = ref(0)
+const touchStartY = ref(0)
+const isHorizontalSwipe = ref(null)
 
 const currentStep = computed(() => props.steps[currentIndex.value] || {})
 
@@ -192,13 +194,25 @@ const previewImage = (idx) => {
 
 const onTouchStart = (e) => {
   touchStartX.value = e.touches[0].clientX
+  touchStartY.value = e.touches[0].clientY
+  isHorizontalSwipe.value = null
 }
 
 const onTouchMove = (e) => {
-  e.preventDefault()
+  const deltaX = e.touches[0].clientX - touchStartX.value
+  const deltaY = e.touches[0].clientY - touchStartY.value
+  if (isHorizontalSwipe.value === null) {
+    if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
+      isHorizontalSwipe.value = Math.abs(deltaX) > Math.abs(deltaY)
+    }
+  }
+  if (isHorizontalSwipe.value === true) {
+    e.preventDefault()
+  }
 }
 
 const onTouchEnd = (e) => {
+  if (isHorizontalSwipe.value !== true) return
   const touchEndX = e.changedTouches[0].clientX
   const diff = touchStartX.value - touchEndX
   if (Math.abs(diff) > 50) {

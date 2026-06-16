@@ -68,6 +68,17 @@
         </div>
 
         <div v-show="currentStep === 1" class="step-panel">
+          <div v-if="materialValidation.warnings.length || !materialValidation.valid" class="mat-validation-panel">
+            <div v-if="!materialValidation.valid" class="mat-errors">
+              <div class="mat-val-title">❌ 请修正以下问题</div>
+              <div v-for="(e, ei) in materialValidation.errors" :key="'e'+ei" class="mat-val-item error">{{ e }}</div>
+            </div>
+            <div v-if="materialValidation.warnings.length" class="mat-warns">
+              <div class="mat-val-title">💡 优化建议</div>
+              <div v-for="(w, wi) in materialValidation.warnings" :key="'w'+wi" class="mat-val-item warning">{{ w }}</div>
+            </div>
+          </div>
+
           <van-cell-group inset title="材料用量速览">
             <div class="material-editor">
               <div class="mat-section" v-for="section in materialSections" :key="section.key">
@@ -89,26 +100,86 @@
                   v-for="(item, idx) in form.materialSummaryObj[section.key]"
                   :key="idx"
                 >
-                  <van-field
-                    v-model="item.name"
-                    placeholder="名称"
-                    class="mat-name-input"
-                  />
-                  <van-field
-                    v-model="item.spec"
-                    placeholder="规格"
-                    class="mat-spec-input"
-                  />
-                  <van-field
-                    v-model="item.quantity"
-                    placeholder="用量"
-                    class="mat-qty-input"
-                  />
-                  <van-icon
-                    name="delete-o"
-                    class="mat-delete"
-                    @click="removeMaterialItem(section.key, idx)"
-                  />
+                  <div class="mat-field-group">
+                    <div class="mat-label-row">
+                      <span class="mat-field-label">名称</span>
+                      <van-button
+                        v-if="section.key === 'mainMaterials'"
+                        size="mini"
+                        plain
+                        type="primary"
+                        class="quick-btn"
+                        @click="openQuickPick('leatherType', section.key, idx)"
+                      >
+                        选皮种
+                      </van-button>
+                    </div>
+                    <van-field
+                      v-model="item.name"
+                      placeholder="如：植鞣革"
+                      class="mat-input"
+                      :error="getItemValidation(section.key, idx).errors.some(e => e.includes('名称'))"
+                    />
+                  </div>
+
+                  <div class="mat-field-group">
+                    <div class="mat-label-row">
+                      <span class="mat-field-label">规格</span>
+                      <div class="quick-btns">
+                        <van-button
+                          size="mini"
+                          plain
+                          type="primary"
+                          class="quick-btn"
+                          @click="openQuickPick('thickness', section.key, idx)"
+                        >
+                          厚度
+                        </van-button>
+                        <van-button
+                          size="mini"
+                          plain
+                          type="primary"
+                          class="quick-btn"
+                          @click="openQuickPick('color', section.key, idx)"
+                        >
+                          颜色
+                        </van-button>
+                      </div>
+                    </div>
+                    <van-field
+                      v-model="item.spec"
+                      placeholder="如：2.0mm 深棕"
+                      class="mat-input"
+                    />
+                  </div>
+
+                  <div class="mat-field-group">
+                    <div class="mat-label-row">
+                      <span class="mat-field-label">用量</span>
+                    </div>
+                    <van-field
+                      v-model="item.quantity"
+                      placeholder="如：1张"
+                      class="mat-input"
+                    />
+                  </div>
+
+                  <div class="mat-item-footer">
+                    <div class="mat-warnings" v-if="getItemValidation(section.key, idx).warnings.length">
+                      <span
+                        v-for="(w, wi) in getItemValidation(section.key, idx).warnings"
+                        :key="wi"
+                        class="mat-warning"
+                      >
+                        ⚠️ {{ w }}
+                      </span>
+                    </div>
+                    <van-icon
+                      name="delete-o"
+                      class="mat-delete"
+                      @click="removeMaterialItem(section.key, idx)"
+                    />
+                  </div>
                 </div>
                 <div class="mat-empty" v-if="!form.materialSummaryObj[section.key].length">
                   暂无{{ section.label }}，点击上方添加
@@ -353,15 +424,74 @@
         </div>
       </div>
     </van-popup>
+
+    <van-popup v-model:show="showQuickPick" position="bottom" round>
+      <div class="option-panel">
+        <div class="option-toolbar">
+          <button type="button" class="option-action cancel" @click="showQuickPick = false">取消</button>
+          <div class="option-title">
+            {{ quickPickType === 'thickness' ? '选择厚度' : quickPickType === 'leatherType' ? '选择皮种' : '选择颜色' }}
+          </div>
+          <button type="button" class="option-action confirm" @click="confirmQuickPick">确认</button>
+        </div>
+        <div class="option-list">
+          <template v-if="quickPickType === 'thickness'">
+            <button
+              v-for="option in THICKNESS_OPTIONS"
+              :key="option.value"
+              type="button"
+              class="option-item"
+              :class="{ active: thicknessPickerValue[0] === option.value }"
+              @click="thicknessPickerValue = [option.value]"
+            >
+              {{ option.label }}
+            </button>
+          </template>
+          <template v-else-if="quickPickType === 'leatherType'">
+            <button
+              v-for="option in LEATHER_TYPE_OPTIONS"
+              :key="option.value"
+              type="button"
+              class="option-item"
+              :class="{ active: leatherTypePickerValue[0] === option.value }"
+              @click="leatherTypePickerValue = [option.value]"
+            >
+              {{ option.label }}
+            </button>
+          </template>
+          <template v-else-if="quickPickType === 'color'">
+            <button
+              v-for="option in COLOR_OPTIONS"
+              :key="option.value"
+              type="button"
+              class="option-item"
+              :class="{ active: colorPickerValue[0] === option.value }"
+              @click="colorPickerValue = [option.value]"
+            >
+              {{ option.label }}
+            </button>
+          </template>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCategories, publishWork } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast, showDialog } from 'vant'
+import {
+  validateAllMaterials,
+  validateSingleMaterial,
+  isLikelyLeather,
+  isVagueName,
+  THICKNESS_OPTIONS,
+  LEATHER_TYPE_OPTIONS,
+  COLOR_OPTIONS
+} from '@/utils/materialValidator'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -447,6 +577,15 @@ const categoryPickerValue = ref([])
 const craftPickerValue = ref([])
 const stepTypePickerValue = ref([])
 
+const materialValidation = ref({ errors: [], warnings: [], valid: true })
+const showQuickPick = ref(false)
+const quickPickType = ref('')
+const quickPickSection = ref('')
+const quickPickIndex = ref(-1)
+const thicknessPickerValue = ref([])
+const leatherTypePickerValue = ref([])
+const colorPickerValue = ref([])
+
 const stepTypeOptions = computed(() =>
   Object.entries(stepTypeMap).map(([key, val]) => ({
     text: `${val.icon} ${val.name}`,
@@ -484,6 +623,11 @@ const validateCurrentStep = () => {
       }
       return true
     case 1:
+      runMaterialValidation()
+      if (!materialValidation.value.valid) {
+        showToast(materialValidation.value.errors[0])
+        return false
+      }
       return true
     case 2:
       return true
@@ -496,6 +640,82 @@ const validateCurrentStep = () => {
     default:
       return true
   }
+}
+
+const runMaterialValidation = () => {
+  materialValidation.value = validateAllMaterials(
+    form.value.materialSummaryObj,
+    form.value.materials
+  )
+}
+
+const getItemValidation = (sectionKey, index) => {
+  const sectionLabel = sectionKey === 'mainMaterials' ? '主材' :
+    sectionKey === 'auxMaterials' ? '辅材' : '工具'
+  const prefix = `${sectionLabel}第${index + 1}项：`
+  const item = form.value.materialSummaryObj[sectionKey]?.[index]
+  if (!item) return { errors: [], warnings: [] }
+  const result = validateSingleMaterial(item, prefix)
+  return { errors: result.errors, warnings: result.warnings }
+}
+
+const openQuickPick = (type, sectionKey, index) => {
+  quickPickType.value = type
+  quickPickSection.value = sectionKey
+  quickPickIndex.value = index
+
+  if (type === 'thickness') {
+    const current = form.value.materialSummaryObj[sectionKey][index].spec || ''
+    const match = THICKNESS_OPTIONS.find(o => current.includes(o.value))
+    thicknessPickerValue.value = match ? [match.value] : [THICKNESS_OPTIONS[5].value]
+  } else if (type === 'leatherType') {
+    const current = form.value.materialSummaryObj[sectionKey][index].name || ''
+    const match = LEATHER_TYPE_OPTIONS.find(o => current.includes(o.value))
+    leatherTypePickerValue.value = match ? [match.value] : []
+  } else if (type === 'color') {
+    const current = form.value.materialSummaryObj[sectionKey][index].spec || ''
+    const match = COLOR_OPTIONS.find(o => current.includes(o.value))
+    colorPickerValue.value = match ? [match.value] : []
+  }
+
+  showQuickPick.value = true
+}
+
+const confirmQuickPick = () => {
+  const sectionKey = quickPickSection.value
+  const index = quickPickIndex.value
+  if (index < 0 || !form.value.materialSummaryObj[sectionKey]?.[index]) {
+    showQuickPick.value = false
+    return
+  }
+  const item = form.value.materialSummaryObj[sectionKey][index]
+
+  if (quickPickType.value === 'thickness') {
+    const thickness = thicknessPickerValue.value[0] || ''
+    if (thickness) {
+      let spec = item.spec || ''
+      spec = spec.replace(/\d+(?:\.\d{1,2})?\s*(mm|毫米|厘米|cm)?/gi, '').trim()
+      item.spec = spec ? `${thickness} ${spec}` : thickness
+    }
+  } else if (quickPickType.value === 'leatherType') {
+    const leatherType = leatherTypePickerValue.value[0] || ''
+    if (leatherType) {
+      item.name = leatherType
+    }
+  } else if (quickPickType.value === 'color') {
+    const color = colorPickerValue.value[0] || ''
+    if (color) {
+      let spec = item.spec || ''
+      spec = spec.replace(
+        /原色|自然色|本色|黑色|白色|红色|黄色|蓝色|绿色|紫色|橙色|粉色|灰色|棕色|褐色|深棕|浅棕|红棕|黄棕|咖啡|咖啡色|巧克力|巧克力色|深红|酒红|枣红|砖红|正红|中国红|深蓝|藏蓝|宝蓝|天蓝|湖蓝|孔雀蓝|深绿|墨绿|草绿|军绿|橄榄绿|薄荷绿|深黄|浅黄|米黄|杏黄|鹅黄|姜黄|柠檬黄|深灰|浅灰|银灰|炭灰|米白|乳白|象牙白|珍珠白|雪白|驼色|米色|卡其|卡其色|杏色|藕色|肉色|金色|银色|古铜色|青铜色|玫瑰金/g,
+        ''
+      ).trim()
+      item.spec = spec ? `${color} ${spec}` : color
+    }
+  }
+
+  showQuickPick.value = false
+  runMaterialValidation()
 }
 
 const handleBack = () => {
@@ -631,6 +851,14 @@ const submit = async () => {
     currentStep.value = 0
     return
   }
+
+  runMaterialValidation()
+  if (!materialValidation.value.valid) {
+    showToast(materialValidation.value.errors[0])
+    currentStep.value = 1
+    return
+  }
+
   if (!fileList.value.length) {
     showToast('请上传成品图片')
     currentStep.value = 3
@@ -689,6 +917,22 @@ const submit = async () => {
     submitting.value = false
   }
 }
+
+watch(
+  () => [form.value.materialSummaryObj, form.value.materials, currentStep.value],
+  () => {
+    if (currentStep.value === 1) {
+      runMaterialValidation()
+    }
+  },
+  { deep: true }
+)
+
+watch(currentStep, (newStep) => {
+  if (newStep === 1) {
+    runMaterialValidation()
+  }
+})
 
 onMounted(async () => {
   const [cats, crafts] = await Promise.all([
@@ -882,31 +1126,126 @@ onMounted(async () => {
 
 .mat-item {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
   background: #faf7f3;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #f0e8df;
+}
+
+.mat-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mat-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.mat-field-label {
+  font-size: 12px;
+  color: #8b5a2b;
+  font-weight: 500;
+}
+
+.quick-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.quick-btn {
+  padding: 0 8px !important;
+  height: 24px !important;
+  font-size: 11px !important;
+}
+
+.mat-input :deep(.van-field__control) {
+  font-size: 14px;
+}
+
+.mat-input :deep(.van-cell) {
+  padding: 6px 8px;
+  background: #fff;
   border-radius: 6px;
-  padding: 4px;
 }
 
-.mat-name-input {
-  flex: 2;
+.mat-item-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
 }
 
-.mat-spec-input {
-  flex: 1.5;
-}
-
-.mat-qty-input {
+.mat-warnings {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mat-warning {
+  font-size: 11px;
+  color: #ff976a;
+  background: #fff7e8;
+  padding: 4px 8px;
+  border-radius: 4px;
+  line-height: 1.4;
 }
 
 .mat-delete {
   color: #ee0a24;
-  font-size: 18px;
-  padding: 8px;
+  font-size: 20px;
+  padding: 4px;
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mat-validation-panel {
+  margin: 0 16px 12px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.mat-errors, .mat-warns {
+  padding: 10px 12px;
+}
+
+.mat-errors {
+  background: #fef0f0;
+  border: 1px solid #fbc4c4;
+}
+
+.mat-warns {
+  background: #fff7e8;
+  border: 1px solid #ffe2b8;
+  border-top: none;
+}
+
+.mat-val-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #646566;
+}
+
+.mat-val-item {
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 2px 0;
+}
+
+.mat-val-item.error {
+  color: #ee0a24;
+}
+
+.mat-val-item.warning {
+  color: #ff976a;
 }
 
 .mat-empty {

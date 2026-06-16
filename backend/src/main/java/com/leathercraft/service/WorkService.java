@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.leathercraft.dto.CraftProfileDTO;
 import com.leathercraft.dto.WorkPublishDTO;
 import com.leathercraft.entity.Work;
+import com.leathercraft.validator.ValidationResult;
 
 import java.util.List;
 
@@ -20,4 +21,5 @@ public interface WorkService extends IService<Work> {
     List<Work> getHotWorks();
     void incrementViewCount(Long id);
     CraftProfileDTO getUserCraftProfile(Long userId);
+    ValidationResult validateMaterialsFull(String materialSummary, String materialsText);
 }

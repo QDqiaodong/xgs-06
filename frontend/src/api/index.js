@@ -20,6 +20,8 @@ export const deleteWork = (id, userId) => request.delete(`/work/${id}/permanent`
 export const getMyWorks = (params) => request.get('/work/my', { params })
 export const getFavoriteWorks = (params) => request.get('/work/favorite', { params })
 export const getHotWorks = () => request.get('/work/hot')
+export const validateMaterials = (data) => request.post('/work/validate-materials', data)
+export const getMaterialReference = () => request.get('/work/material-reference')
 
 export const toggleFavorite = (userId, workId) => request.post('/favorite/toggle', null, { params: { userId, workId } })
 export const checkFavorite = (userId, workId) => request.get('/favorite/check', { params: { userId, workId } })

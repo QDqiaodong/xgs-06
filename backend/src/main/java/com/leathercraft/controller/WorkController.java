@@ -5,10 +5,13 @@ import com.leathercraft.common.Result;
 import com.leathercraft.dto.WorkPublishDTO;
 import com.leathercraft.entity.Work;
 import com.leathercraft.service.WorkService;
+import com.leathercraft.validator.MaterialValidator;
+import com.leathercraft.validator.ValidationResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/work")
@@ -16,6 +19,22 @@ public class WorkController {
 
     @Autowired
     private WorkService workService;
+
+    @Autowired
+    private MaterialValidator materialValidator;
+
+    @PostMapping("/validate-materials")
+    public Result<ValidationResult> validateMaterials(@RequestBody Map<String, String> body) {
+        String materialSummary = body.get("materialSummary");
+        String materials = body.get("materials");
+        ValidationResult result = workService.validateMaterialsFull(materialSummary, materials);
+        return Result.success(result);
+    }
+
+    @GetMapping("/material-reference")
+    public Result<Map<String, Object>> getMaterialReference() {
+        return Result.success(materialValidator.getValidationReferenceData());
+    }
 
     @GetMapping("/page")
     public Result<IPage<Work>> getWorkPage(

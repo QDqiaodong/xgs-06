@@ -13,6 +13,8 @@ import com.leathercraft.mapper.WorkImageMapper;
 import com.leathercraft.mapper.WorkMapper;
 import com.leathercraft.mapper.WorkStepMapper;
 import com.leathercraft.service.WorkService;
+import com.leathercraft.validator.MaterialValidator;
+import com.leathercraft.validator.ValidationResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -44,6 +46,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private MaterialValidator materialValidator;
 
     private static final String HOT_WORKS_KEY = "hot:works";
     private static final String WORK_VIEW_KEY = "work:view:";
@@ -320,6 +325,8 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     @Override
     @Transactional
     public void publishWork(WorkPublishDTO dto, Long userId) {
+        validateMaterials(dto.getMaterialSummary(), dto.getMaterials());
+
         Work work = new Work();
         work.setUserId(userId);
         work.setTitle(dto.getTitle());
@@ -346,6 +353,8 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     @Override
     @Transactional
     public void updateWork(WorkPublishDTO dto, Long userId) {
+        validateMaterials(dto.getMaterialSummary(), dto.getMaterials());
+
         Work work = getById(dto.getId());
         if (work == null || !work.getUserId().equals(userId)) {
             throw new RuntimeException("无权限修改");
@@ -502,6 +511,23 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
     private boolean checkFavorite(Long userId, Long workId) {
         return favoriteService.isFavorite(userId, workId);
+    }
+
+    private void validateMaterials(String materialSummary, String materialsText) {
+        ValidationResult result = new ValidationResult();
+        result.merge(materialValidator.validateMaterialSummary(materialSummary));
+        result.merge(materialValidator.validateMaterialsText(materialsText));
+
+        if (!result.isValid()) {
+            throw new RuntimeException("材料信息校验失败：" + result.getErrorSummary());
+        }
+    }
+
+    public ValidationResult validateMaterialsFull(String materialSummary, String materialsText) {
+        ValidationResult result = new ValidationResult();
+        result.merge(materialValidator.validateMaterialSummary(materialSummary));
+        result.merge(materialValidator.validateMaterialsText(materialsText));
+        return result;
     }
 
     @Override

@@ -4,6 +4,7 @@ export const login = (data) => request.post('/user/login', data)
 export const register = (data) => request.post('/user/register', data)
 export const getUserInfo = (id) => request.get(`/user/${id}`)
 export const updateUser = (data) => request.put('/user', data)
+export const getCraftProfile = (userId) => request.get(`/user/craft-profile/${userId}`)
 
 export const getCategories = (type) => request.get('/category/list', { params: { type } })
 

@@ -3,6 +3,7 @@ package com.leathercraft.service.impl;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.leathercraft.dto.CraftProfileDTO;
 import com.leathercraft.dto.WorkPublishDTO;
 import com.leathercraft.dto.WorkStepDTO;
 import com.leathercraft.entity.Work;
@@ -22,7 +23,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -498,5 +501,87 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
     private boolean checkFavorite(Long userId, Long workId) {
         return favoriteService.isFavorite(userId, workId);
+    }
+
+    @Override
+    public CraftProfileDTO getUserCraftProfile(Long userId) {
+        CraftProfileDTO profile = new CraftProfileDTO();
+
+        List<Map<String, Object>> topCatRows = baseMapper.selectTopCategories(userId);
+        List<CraftProfileDTO.CategoryStat> topCategories = new ArrayList<>();
+        for (Map<String, Object> row : topCatRows) {
+            Long id = row.get("id") != null ? ((Number) row.get("id")).longValue() : null;
+            String name = (String) row.get("name");
+            Integer count = row.get("count") != null ? ((Number) row.get("count")).intValue() : 0;
+            topCategories.add(new CraftProfileDTO.CategoryStat(id, name, count));
+        }
+        profile.setTopCategories(topCategories);
+
+        List<Map<String, Object>> topCraftRows = baseMapper.selectTopCraftTypes(userId);
+        List<CraftProfileDTO.CategoryStat> topCraftTypes = new ArrayList<>();
+        for (Map<String, Object> row : topCraftRows) {
+            Long id = row.get("id") != null ? ((Number) row.get("id")).longValue() : null;
+            String name = (String) row.get("name");
+            Integer count = row.get("count") != null ? ((Number) row.get("count")).intValue() : 0;
+            topCraftTypes.add(new CraftProfileDTO.CategoryStat(id, name, count));
+        }
+        profile.setTopCraftTypes(topCraftTypes);
+
+        Integer recentCount = baseMapper.selectRecentCount(userId);
+        profile.setRecentCompleted(recentCount != null ? recentCount : 0);
+
+        Integer totalCount = baseMapper.selectTotalCount(userId);
+        profile.setTotalWorks(totalCount != null ? totalCount : 0);
+
+        List<String> commonMaterials = extractCommonMaterials(userId);
+        profile.setCommonMaterials(commonMaterials);
+
+        return profile;
+    }
+
+    private List<String> extractCommonMaterials(Long userId) {
+        List<Map<String, Object>> materialRows = baseMapper.selectMaterialsForProfile(userId);
+        Map<String, Integer> materialCount = new LinkedHashMap<>();
+
+        for (Map<String, Object> row : materialRows) {
+            String materials = (String) row.get("materials");
+            String materialSummary = (String) row.get("material_summary");
+
+            if (materialSummary != null && !materialSummary.trim().isEmpty()) {
+                try {
+                    JsonNode root = objectMapper.readTree(materialSummary);
+                    collectMaterialNames(root.path("mainMaterials"), materialCount);
+                    collectMaterialNames(root.path("auxMaterials"), materialCount);
+                } catch (Exception ignored) {}
+            }
+
+            if (materials != null && !materials.trim().isEmpty()) {
+                String[] parts = materials.split("[,，、；;\\s]+");
+                for (String part : parts) {
+                    String trimmed = part.trim();
+                    if (!trimmed.isEmpty() && trimmed.length() <= 20) {
+                        materialCount.merge(trimmed, 1, Integer::sum);
+                    }
+                }
+            }
+        }
+
+        return materialCount.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(5)
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    private void collectMaterialNames(JsonNode items, Map<String, Integer> materialCount) {
+        if (items == null || !items.isArray()) {
+            return;
+        }
+        for (JsonNode item : items) {
+            String name = item.path("name").asText("");
+            if (!name.isEmpty() && name.length() <= 20) {
+                materialCount.merge(name, 1, Integer::sum);
+            }
+        }
     }
 }

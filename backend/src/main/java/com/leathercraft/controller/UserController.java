@@ -1,9 +1,11 @@
 package com.leathercraft.controller;
 
 import com.leathercraft.common.Result;
+import com.leathercraft.dto.CraftProfileDTO;
 import com.leathercraft.dto.LoginDTO;
 import com.leathercraft.entity.User;
 import com.leathercraft.service.UserService;
+import com.leathercraft.service.WorkService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +15,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private WorkService workService;
 
     @PostMapping("/login")
     public Result<User> login(@RequestBody LoginDTO dto) {
@@ -70,5 +75,10 @@ public class UserController {
         }
         userService.updateUser(existUser);
         return Result.success();
+    }
+
+    @GetMapping("/craft-profile/{userId}")
+    public Result<CraftProfileDTO> getCraftProfile(@PathVariable Long userId) {
+        return Result.success(workService.getUserCraftProfile(userId));
     }
 }

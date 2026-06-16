@@ -37,19 +37,21 @@
       </div>
     </van-form>
 
-    <van-dialog v-model:show="isRegister" title="注册" show-cancel-button @confirm="onRegister">
-      <van-form>
+    <van-dialog v-model:show="isRegister" title="注册" show-cancel-button :before-close="beforeRegisterClose">
+      <van-form ref="registerFormRef">
         <van-cell-group inset>
           <van-field
             v-model="registerForm.username"
             label="用户名"
             placeholder="请输入用户名"
+            :rules="[{ required: true, message: '请填写用户名' }]"
           />
           <van-field
             v-model="registerForm.password"
             type="password"
             label="密码"
             placeholder="请输入密码"
+            :rules="[{ required: true, message: '请填写密码' }]"
           />
           <van-field
             v-model="registerForm.nickname"
@@ -80,6 +82,7 @@ const form = ref({
 })
 
 const isRegister = ref(false)
+const registerFormRef = ref(null)
 const registerForm = ref({
   username: '',
   password: '',
@@ -104,13 +107,19 @@ const onSubmit = async () => {
   }
 }
 
-const onRegister = async () => {
+const beforeRegisterClose = async (action, done) => {
+  if (action !== 'confirm') {
+    done()
+    return
+  }
   try {
+    await registerFormRef.value?.validate()
     await register(registerForm.value)
     showToast('注册成功，请登录')
-    isRegister.value = false
-  } catch (e) {
-    // error handled by interceptor
+    registerForm.value = { username: '', password: '', nickname: '' }
+    done()
+  } catch {
+    done(false)
   }
 }
 </script>

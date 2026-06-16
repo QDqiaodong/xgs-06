@@ -9,6 +9,7 @@ public class WorkPublishDTO {
     private String content;
     private String materials;
     private String materialSummary;
+    private String materialBrief;
     private String craftSteps;
     private Long categoryId;
     private Long craftTypeId;
@@ -62,6 +63,14 @@ public class WorkPublishDTO {
 
     public void setMaterialSummary(String materialSummary) {
         this.materialSummary = materialSummary;
+    }
+
+    public String getMaterialBrief() {
+        return materialBrief;
+    }
+
+    public void setMaterialBrief(String materialBrief) {
+        this.materialBrief = materialBrief;
     }
 
     public String getCraftSteps() {

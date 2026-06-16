@@ -12,7 +12,10 @@
           <van-icon name="star-o" /> {{ work.favoriteCount || 0 }}
         </span>
       </div>
-      <div class="card-materials" v-if="work.materialSummary">
+      <div class="card-materials" v-if="work.materialBrief">
+        <span class="material-brief">{{ work.materialBrief }}</span>
+      </div>
+      <div class="card-materials" v-else-if="work.materialSummary">
         <MaterialSummary :material-summary="work.materialSummary" compact />
       </div>
       <div class="card-author">
@@ -83,6 +86,20 @@ defineProps({
 
 .card-materials {
   margin-bottom: 10px;
+}
+
+.material-brief {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  background: #f8f4ef;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border-left: 3px solid #c08457;
 }
 
 .category {

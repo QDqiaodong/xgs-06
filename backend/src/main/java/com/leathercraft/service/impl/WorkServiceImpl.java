@@ -17,6 +17,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +44,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
     private static final String HOT_WORKS_KEY = "hot:works";
     private static final String WORK_VIEW_KEY = "work:view:";
+    private static final int MATERIAL_BRIEF_MAX_LENGTH = 100;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final String[][] CRAFT_KEYWORDS = {
         {"封边", "磨边", "边油", "床面", "封边上色"},
@@ -199,6 +205,60 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         return "other";
     }
 
+    private String generateMaterialBrief(String materialSummary, String materialsText) {
+        StringBuilder brief = new StringBuilder();
+
+        if (materialSummary != null && !materialSummary.trim().isEmpty()) {
+            try {
+                JsonNode root = objectMapper.readTree(materialSummary);
+                List<String> parts = new ArrayList<>();
+
+                appendMaterialItems(parts, root.path("mainMaterials"), "主材");
+                appendMaterialItems(parts, root.path("auxMaterials"), "辅材");
+                appendMaterialItems(parts, root.path("tools"), "工具");
+
+                brief.append(String.join("；", parts));
+            } catch (Exception e) {
+                // JSON 解析失败，回退到文本模式
+            }
+        }
+
+        if (brief.length() == 0 && materialsText != null && !materialsText.trim().isEmpty()) {
+            String clean = materialsText.trim().replaceAll("\\s+", " ");
+            brief.append(clean);
+        }
+
+        String result = brief.toString();
+        if (result.length() > MATERIAL_BRIEF_MAX_LENGTH) {
+            result = result.substring(0, MATERIAL_BRIEF_MAX_LENGTH - 1) + "…";
+        }
+        return result;
+    }
+
+    private void appendMaterialItems(List<String> parts, JsonNode items, String label) {
+        if (items == null || !items.isArray() || items.size() == 0) {
+            return;
+        }
+        List<String> names = new ArrayList<>();
+        for (JsonNode item : items) {
+            StringBuilder sb = new StringBuilder();
+            String name = item.path("name").asText("");
+            if (!name.isEmpty()) {
+                sb.append(name);
+            }
+            String spec = item.path("spec").asText("");
+            if (!spec.isEmpty()) {
+                sb.append(spec);
+            }
+            if (sb.length() > 0) {
+                names.add(sb.toString());
+            }
+        }
+        if (!names.isEmpty()) {
+            parts.add(label + "：" + String.join("、", names));
+        }
+    }
+
     private void extractCraftHighlights(Work work) {
         List<String> highlights = new ArrayList<>();
         boolean[] found = new boolean[CRAFT_NAMES.length];
@@ -264,6 +324,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setContent(dto.getContent());
         work.setMaterials(dto.getMaterials());
         work.setMaterialSummary(dto.getMaterialSummary());
+        work.setMaterialBrief(generateMaterialBrief(dto.getMaterialSummary(), dto.getMaterials()));
         work.setCraftSteps(dto.getCraftSteps());
         work.setCategoryId(dto.getCategoryId());
         work.setCraftTypeId(dto.getCraftTypeId());
@@ -291,6 +352,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setContent(dto.getContent());
         work.setMaterials(dto.getMaterials());
         work.setMaterialSummary(dto.getMaterialSummary());
+        work.setMaterialBrief(generateMaterialBrief(dto.getMaterialSummary(), dto.getMaterials()));
         work.setCraftSteps(dto.getCraftSteps());
         work.setCategoryId(dto.getCategoryId());
         work.setCraftTypeId(dto.getCraftTypeId());

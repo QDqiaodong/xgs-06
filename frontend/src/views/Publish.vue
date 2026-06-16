@@ -1,228 +1,285 @@
 <template>
   <div class="publish-page">
-    <van-nav-bar title="发布作品" left-arrow @click-left="$router.back()" fixed>
+    <van-nav-bar title="发布作品" left-arrow @click-left="handleBack" fixed>
       <template #right>
-        <van-button type="primary" size="small" @click="submit" :loading="submitting">
+        <van-button type="primary" size="small" @click="submit" :loading="submitting" v-if="currentStep === 3">
           发布
         </van-button>
       </template>
     </van-nav-bar>
 
     <div class="publish-content">
-      <van-form>
-        <van-cell-group inset title="基础信息">
-          <van-field
-            v-model="form.title"
-            label="标题"
-            placeholder="请输入作品标题"
-            maxlength="50"
-            show-word-limit
-          />
-          <van-field
-            v-model="form.content"
-            label="简介"
-            type="textarea"
-            placeholder="简单介绍一下你的作品..."
-            rows="3"
-            maxlength="500"
-            show-word-limit
-          />
-        </van-cell-group>
+      <div class="step-indicator">
+        <div
+          v-for="(step, idx) in steps"
+          :key="idx"
+          class="step-item"
+          :class="{ active: currentStep === idx, done: currentStep > idx }"
+          @click="goToStep(idx)"
+        >
+          <div class="step-circle">{{ idx + 1 }}</div>
+          <div class="step-label">{{ step.label }}</div>
+        </div>
+        <div class="step-line" :style="{ width: stepLineWidth }"></div>
+      </div>
 
-        <van-cell-group inset title="成品图片">
-          <van-uploader
-            v-model="fileList"
-            multiple
-            :max-count="9"
-            :after-read="afterRead"
-          />
-        </van-cell-group>
+      <van-form class="step-form">
+        <div v-show="currentStep === 0" class="step-panel">
+          <van-cell-group inset title="作品标题">
+            <van-field
+              v-model="form.title"
+              label="标题"
+              placeholder="请输入作品标题"
+              maxlength="50"
+              show-word-limit
+            />
+          </van-cell-group>
 
-        <van-cell-group inset title="分类信息">
-          <van-field
-            v-model="showCategoryPicker"
-            is-link
-            readonly
-            label="皮具品类"
-            :value="selectedCategoryName"
-            placeholder="请选择品类"
-            @click="showCategoryPicker = true"
-          />
-          <van-field
-            v-model="showCraftPicker"
-            is-link
-            readonly
-            label="工艺类型"
-            :value="selectedCraftName"
-            placeholder="请选择工艺"
-            @click="showCraftPicker = true"
-          />
-        </van-cell-group>
+          <van-cell-group inset title="作品简介">
+            <van-field
+              v-model="form.content"
+              label="简介"
+              type="textarea"
+              placeholder="简单介绍一下你的作品..."
+              rows="3"
+              maxlength="500"
+              show-word-limit
+            />
+          </van-cell-group>
 
-        <van-cell-group inset title="材料用量速览">
-          <div class="material-editor">
-            <div class="mat-section" v-for="section in materialSections" :key="section.key">
-              <div class="mat-section-header">
-                <span class="mat-icon">{{ section.icon }}</span>
-                <span class="mat-title">{{ section.label }}</span>
-                <van-button
-                  size="mini"
-                  type="primary"
-                  plain
-                  icon="plus"
-                  @click="addMaterialItem(section.key)"
+          <van-cell-group inset title="分类信息">
+            <van-field
+              v-model="showCategoryPicker"
+              is-link
+              readonly
+              label="皮具品类"
+              :value="selectedCategoryName"
+              placeholder="请选择品类"
+              @click="showCategoryPicker = true"
+            />
+            <van-field
+              v-model="showCraftPicker"
+              is-link
+              readonly
+              label="工艺类型"
+              :value="selectedCraftName"
+              placeholder="请选择工艺"
+              @click="showCraftPicker = true"
+            />
+          </van-cell-group>
+        </div>
+
+        <div v-show="currentStep === 1" class="step-panel">
+          <van-cell-group inset title="材料用量速览">
+            <div class="material-editor">
+              <div class="mat-section" v-for="section in materialSections" :key="section.key">
+                <div class="mat-section-header">
+                  <span class="mat-icon">{{ section.icon }}</span>
+                  <span class="mat-title">{{ section.label }}</span>
+                  <van-button
+                    size="mini"
+                    type="primary"
+                    plain
+                    icon="plus"
+                    @click="addMaterialItem(section.key)"
+                  >
+                    添加
+                  </van-button>
+                </div>
+                <div
+                  class="mat-item"
+                  v-for="(item, idx) in form.materialSummaryObj[section.key]"
+                  :key="idx"
                 >
-                  添加
-                </van-button>
+                  <van-field
+                    v-model="item.name"
+                    placeholder="名称"
+                    class="mat-name-input"
+                  />
+                  <van-field
+                    v-model="item.spec"
+                    placeholder="规格"
+                    class="mat-spec-input"
+                  />
+                  <van-field
+                    v-model="item.quantity"
+                    placeholder="用量"
+                    class="mat-qty-input"
+                  />
+                  <van-icon
+                    name="delete-o"
+                    class="mat-delete"
+                    @click="removeMaterialItem(section.key, idx)"
+                  />
+                </div>
+                <div class="mat-empty" v-if="!form.materialSummaryObj[section.key].length">
+                  暂无{{ section.label }}，点击上方添加
+                </div>
               </div>
+            </div>
+          </van-cell-group>
+
+          <van-cell-group inset title="用料描述（可选）">
+            <van-field
+              v-model="form.materials"
+              label="用料"
+              type="textarea"
+              placeholder="使用了哪些皮料、五金、线等..."
+              rows="2"
+            />
+          </van-cell-group>
+        </div>
+
+        <div v-show="currentStep === 2" class="step-panel">
+          <van-cell-group inset title="工序步骤（分镜）">
+            <div class="steps-editor">
               <div
-                class="mat-item"
-                v-for="(item, idx) in form.materialSummaryObj[section.key]"
+                v-for="(step, idx) in form.steps"
                 :key="idx"
+                class="step-editor-item"
               >
+                <div class="step-header">
+                  <span class="step-index">第 {{ idx + 1 }} 步</span>
+                  <van-icon
+                    name="delete-o"
+                    class="delete-btn"
+                    @click="removeStep(idx)"
+                  />
+                </div>
+
                 <van-field
-                  v-model="item.name"
-                  placeholder="名称"
-                  class="mat-name-input"
+                  v-model="step.stepName"
+                  label="步骤名称"
+                  placeholder="如：裁下料片"
+                  maxlength="30"
                 />
+
                 <van-field
-                  v-model="item.spec"
-                  placeholder="规格"
-                  class="mat-spec-input"
+                  v-model="step.stepType"
+                  is-link
+                  readonly
+                  label="步骤类型"
+                  :value="getStepTypeName(step.stepType)"
+                  placeholder="选择类型"
+                  @click="openStepTypePicker(idx)"
                 />
+
                 <van-field
-                  v-model="item.quantity"
-                  placeholder="用量"
-                  class="mat-qty-input"
+                  v-model="step.materials"
+                  label="本步材料"
+                  type="textarea"
+                  placeholder="如：植鞣革2.0mm，裁皮刀"
+                  rows="1"
+                  maxlength="200"
                 />
-                <van-icon
-                  name="delete-o"
-                  class="mat-delete"
-                  @click="removeMaterialItem(section.key, idx)"
+
+                <van-field
+                  v-model="step.description"
+                  label="操作说明"
+                  type="textarea"
+                  placeholder="详细描述本步骤的操作过程..."
+                  rows="2"
+                  maxlength="500"
                 />
+
+                <van-field
+                  v-model="step.tips"
+                  label="注意要点"
+                  type="textarea"
+                  placeholder="本步骤需要注意的技巧和坑点..."
+                  rows="2"
+                  maxlength="300"
+                />
+
+                <div class="step-images-upload">
+                  <div class="upload-label">本步过程图</div>
+                  <van-uploader
+                    v-model="step._fileList"
+                    multiple
+                    :max-count="5"
+                    :after-read="(file) => afterStepRead(file, idx)"
+                  />
+                </div>
+
+                <div v-if="idx < form.steps.length - 1" class="step-divider"></div>
               </div>
-              <div class="mat-empty" v-if="!form.materialSummaryObj[section.key].length">
-                暂无{{ section.label }}，点击上方添加
-              </div>
+
+              <van-button
+                block
+                plain
+                type="primary"
+                icon="plus"
+                @click="addStep"
+                class="add-step-btn"
+              >
+                添加工序步骤
+              </van-button>
             </div>
-          </div>
-        </van-cell-group>
+          </van-cell-group>
 
-        <van-cell-group inset title="用料描述（可选）">
-          <van-field
-            v-model="form.materials"
-            label="用料"
-            type="textarea"
-            placeholder="使用了哪些皮料、五金、线等..."
-            rows="2"
-          />
-        </van-cell-group>
+          <van-cell-group inset title="旧版制作心得（可选）">
+            <van-field
+              v-model="form.craftSteps"
+              label="制作心得"
+              type="textarea"
+              placeholder="可选：简单的文本形式制作流程，或使用上面的结构化步骤..."
+              rows="4"
+            />
+          </van-cell-group>
+        </div>
 
-        <van-cell-group inset title="工序步骤（分镜）">
-          <div class="steps-editor">
-            <div
-              v-for="(step, idx) in form.steps"
-              :key="idx"
-              class="step-editor-item"
-            >
-              <div class="step-header">
-                <span class="step-index">第 {{ idx + 1 }} 步</span>
-                <van-icon
-                  name="delete-o"
-                  class="delete-btn"
-                  @click="removeStep(idx)"
-                />
-              </div>
+        <div v-show="currentStep === 3" class="step-panel">
+          <van-cell-group inset title="成品图片">
+            <van-uploader
+              v-model="fileList"
+              multiple
+              :max-count="9"
+              :after-read="afterRead"
+            />
+            <div class="upload-hint">第一张图片将作为作品封面</div>
+          </van-cell-group>
 
-              <van-field
-                v-model="step.stepName"
-                label="步骤名称"
-                placeholder="如：裁下料片"
-                maxlength="30"
-              />
-
-              <van-field
-                v-model="step.stepType"
-                is-link
-                readonly
-                label="步骤类型"
-                :value="getStepTypeName(step.stepType)"
-                placeholder="选择类型"
-                @click="openStepTypePicker(idx)"
-              />
-
-              <van-field
-                v-model="step.materials"
-                label="本步材料"
-                type="textarea"
-                placeholder="如：植鞣革2.0mm，裁皮刀"
-                rows="1"
-                maxlength="200"
-              />
-
-              <van-field
-                v-model="step.description"
-                label="操作说明"
-                type="textarea"
-                placeholder="详细描述本步骤的操作过程..."
-                rows="2"
-                maxlength="500"
-              />
-
-              <van-field
-                v-model="step.tips"
-                label="注意要点"
-                type="textarea"
-                placeholder="本步骤需要注意的技巧和坑点..."
-                rows="2"
-                maxlength="300"
-              />
-
-              <div class="step-images-upload">
-                <div class="upload-label">本步过程图</div>
-                <van-uploader
-                  v-model="step._fileList"
-                  multiple
-                  :max-count="5"
-                  :after-read="(file) => afterStepRead(file, idx)"
-                />
-              </div>
-
-              <div v-if="idx < form.steps.length - 1" class="step-divider"></div>
-            </div>
-
-            <van-button
-              block
-              plain
-              type="primary"
-              icon="plus"
-              @click="addStep"
-              class="add-step-btn"
-            >
-              添加工序步骤
-            </van-button>
-          </div>
-        </van-cell-group>
-
-        <van-cell-group inset title="旧版制作心得（可选）">
-          <van-field
-            v-model="form.craftSteps"
-            label="制作心得"
-            type="textarea"
-            placeholder="可选：简单的文本形式制作流程，或使用上面的结构化步骤..."
-            rows="4"
-          />
-        </van-cell-group>
-
-        <van-cell-group inset title="过程图（可选，已绑定到步骤的可不传）">
-          <van-uploader
-            v-model="processFileList"
-            multiple
-            :max-count="20"
-            :after-read="afterProcessRead"
-          />
-        </van-cell-group>
+          <van-cell-group inset title="过程图（可选，已绑定到步骤的可不传）">
+            <van-uploader
+              v-model="processFileList"
+              multiple
+              :max-count="20"
+              :after-read="afterProcessRead"
+            />
+          </van-cell-group>
+        </div>
       </van-form>
+
+      <div class="step-nav">
+        <van-button
+          block
+          type="default"
+          :disabled="currentStep === 0"
+          @click="prevStep"
+          class="nav-btn prev-btn"
+        >
+          上一步
+        </van-button>
+        <van-button
+          block
+          type="primary"
+          @click="nextStep"
+          class="nav-btn next-btn"
+          v-if="currentStep < 3"
+        >
+          下一步
+        </van-button>
+        <van-button
+          block
+          type="primary"
+          @click="submit"
+          :loading="submitting"
+          class="nav-btn submit-btn"
+          v-else
+        >
+          发布作品
+        </van-button>
+      </div>
     </div>
 
     <van-popup v-model:show="showCategoryPicker" position="bottom" round>
@@ -258,11 +315,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCategories, publishWork } from '@/api'
 import { useUserStore } from '@/store/user'
-import { showToast } from 'vant'
+import { showToast, showDialog } from 'vant'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -283,6 +340,13 @@ const materialSections = [
   { key: 'tools', label: '工具', icon: '🛠️' }
 ]
 
+const steps = [
+  { label: '基础信息' },
+  { label: '材料' },
+  { label: '步骤' },
+  { label: '图片' }
+]
+
 const createEmptyMaterial = () => ({
   name: '',
   spec: '',
@@ -300,6 +364,13 @@ const createEmptyStep = () => ({
   sort: 0,
   images: [],
   _fileList: []
+})
+
+const currentStep = ref(0)
+
+const stepLineWidth = computed(() => {
+  const progress = currentStep.value / (steps.length - 1) * 100
+  return `calc(${progress}% - 1px)`
 })
 
 const form = ref({
@@ -336,6 +407,68 @@ const stepTypeOptions = computed(() =>
     id: key
   }))
 )
+
+const goToStep = (idx) => {
+  if (idx < 0 || idx >= steps.length) return
+  currentStep.value = idx
+}
+
+const prevStep = () => {
+  if (currentStep.value > 0) {
+    currentStep.value--
+  }
+}
+
+const nextStep = () => {
+  if (validateCurrentStep()) {
+    currentStep.value++
+  }
+}
+
+const validateCurrentStep = () => {
+  switch (currentStep.value) {
+    case 0:
+      if (!form.value.title || !form.value.title.trim()) {
+        showToast('请输入作品标题')
+        return false
+      }
+      if (!form.value.categoryId) {
+        showToast('请选择皮具品类')
+        return false
+      }
+      return true
+    case 1:
+      return true
+    case 2:
+      return true
+    case 3:
+      if (!fileList.value.length) {
+        showToast('请上传成品图片')
+        return false
+      }
+      return true
+    default:
+      return true
+  }
+}
+
+const handleBack = () => {
+  const hasContent = form.value.title || form.value.content || fileList.value.length > 0 ||
+    form.value.steps.some(s => s.stepName) ||
+    Object.values(form.value.materialSummaryObj).some(arr => arr.length > 0)
+
+  if (hasContent) {
+    showDialog({
+      title: '确认离开',
+      message: '当前填写的内容将会丢失，确定要离开吗？',
+      showCancelButton: true
+    }).then(() => {
+      router.back()
+    }).catch(() => {})
+  } else {
+    router.back()
+  }
+}
 
 const addStep = () => {
   form.value.steps.push(createEmptyStep())
@@ -406,14 +539,17 @@ const submit = async () => {
 
   if (!form.value.title) {
     showToast('请输入标题')
+    currentStep.value = 0
     return
   }
   if (!form.value.categoryId) {
     showToast('请选择品类')
+    currentStep.value = 0
     return
   }
   if (!fileList.value.length) {
     showToast('请上传成品图片')
+    currentStep.value = 3
     return
   }
 
@@ -482,12 +618,149 @@ onMounted(async () => {
 <style scoped>
 .publish-page {
   min-height: 100vh;
-  padding-bottom: 20px;
+  padding-bottom: 80px;
   background: #f5f5f5;
 }
 
 .publish-content {
   padding-top: 46px;
+}
+
+.step-indicator {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 24px 12px;
+  background: #fff;
+  margin-bottom: 12px;
+}
+
+.step-indicator::before {
+  content: '';
+  position: absolute;
+  top: 28px;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  background: #ebedf0;
+  z-index: 0;
+}
+
+.step-line {
+  position: absolute;
+  top: 28px;
+  left: 24px;
+  height: 2px;
+  background: linear-gradient(90deg, #c08457, #8b5a2b);
+  z-index: 1;
+  transition: width 0.3s ease;
+}
+
+.step-item {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  flex: 1;
+}
+
+.step-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #dcdee0;
+  color: #969799;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.step-item.done .step-circle {
+  background: linear-gradient(135deg, #c08457, #8b5a2b);
+  border-color: #8b5a2b;
+  color: #fff;
+}
+
+.step-item.active .step-circle {
+  background: linear-gradient(135deg, #d4a574, #c08457);
+  border-color: #c08457;
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(139, 90, 43, 0.3);
+}
+
+.step-label {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #969799;
+  white-space: nowrap;
+}
+
+.step-item.active .step-label {
+  color: #8b5a2b;
+  font-weight: 600;
+}
+
+.step-item.done .step-label {
+  color: #c08457;
+}
+
+.step-form {
+  padding-bottom: 12px;
+}
+
+.step-panel {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.step-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #fff;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+  z-index: 100;
+}
+
+.nav-btn {
+  flex: 1;
+}
+
+.prev-btn {
+  flex: 0 0 35%;
+}
+
+.next-btn,
+.submit-btn {
+  flex: 1;
+}
+
+.upload-hint {
+  padding: 0 16px 12px;
+  font-size: 12px;
+  color: #969799;
 }
 
 .material-editor {

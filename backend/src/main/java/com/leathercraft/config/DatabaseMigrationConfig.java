@@ -6,19 +6,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Comparator;
 
 @Component
 public class DatabaseMigrationConfig implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DatabaseMigrationConfig.class);
 
-    private static final String MIGRATION_SCRIPT = "db/migration/V1__add_material_summary.sql";
+    private static final String MIGRATION_PATTERN = "db/migration/V*.sql";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -26,23 +30,33 @@ public class DatabaseMigrationConfig implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         try {
-            ClassPathResource resource = new ClassPathResource(MIGRATION_SCRIPT);
-            if (!resource.exists()) {
-                log.warn("Migration script not found: {}", MIGRATION_SCRIPT);
+            ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            org.springframework.core.io.Resource[] resources = resolver.getResources("classpath:" + MIGRATION_PATTERN);
+
+            if (resources == null || resources.length == 0) {
+                log.warn("No migration scripts found");
                 return;
             }
-            try (InputStream is = resource.getInputStream()) {
-                String sql = StreamUtils.copyToString(is, StandardCharsets.UTF_8);
-                String[] statements = splitStatements(sql);
-                for (String stmt : statements) {
-                    if (stmt != null && !stmt.trim().isEmpty()) {
-                        jdbcTemplate.execute(stmt.trim());
+
+            Arrays.sort(resources, Comparator.comparing(r -> r.getFilename()));
+
+            for (org.springframework.core.io.Resource resource : resources) {
+                String fileName = resource.getFilename();
+                try (InputStream is = resource.getInputStream()) {
+                    String sql = StreamUtils.copyToString(is, StandardCharsets.UTF_8);
+                    String[] statements = splitStatements(sql);
+                    for (String stmt : statements) {
+                        if (stmt != null && !stmt.trim().isEmpty()) {
+                            jdbcTemplate.execute(stmt.trim());
+                        }
                     }
+                    log.info("Database migration executed successfully: {}", fileName);
+                } catch (Exception e) {
+                    log.warn("Migration skipped or failed (may already be applied): {} - {}", fileName, e.getMessage());
                 }
-                log.info("Database migration executed successfully: {}", MIGRATION_SCRIPT);
             }
         } catch (Exception e) {
-            log.warn("Database migration skipped or failed (may already be applied): {}", e.getMessage());
+            log.warn("Database migration process failed: {}", e.getMessage());
         }
     }
 

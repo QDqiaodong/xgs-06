@@ -49,22 +49,20 @@
 
           <van-cell-group inset title="分类信息">
             <van-field
-              v-model="showCategoryPicker"
+              :model-value="selectedCategoryName"
               is-link
               readonly
               label="皮具品类"
-              :value="selectedCategoryName"
               placeholder="请选择品类"
-              @click="showCategoryPicker = true"
+              @click="openCategoryPicker"
             />
             <van-field
-              v-model="showCraftPicker"
+              :model-value="selectedCraftName"
               is-link
               readonly
               label="工艺类型"
-              :value="selectedCraftName"
               placeholder="请选择工艺"
-              @click="showCraftPicker = true"
+              @click="openCraftPicker"
             />
           </van-cell-group>
         </div>
@@ -155,11 +153,10 @@
                 />
 
                 <van-field
-                  v-model="step.stepType"
+                  :model-value="getStepTypeName(step.stepType)"
                   is-link
                   readonly
                   label="步骤类型"
-                  :value="getStepTypeName(step.stepType)"
                   placeholder="选择类型"
                   @click="openStepTypePicker(idx)"
                 />
@@ -283,33 +280,69 @@
     </div>
 
     <van-popup v-model:show="showCategoryPicker" position="bottom" round>
-      <van-picker
-        :columns="categories"
-        show-toolbar
-        title="选择皮具品类"
-        @confirm="onCategoryConfirm"
-        @cancel="showCategoryPicker = false"
-      />
+      <div class="option-panel">
+        <div class="option-toolbar">
+          <button type="button" class="option-action cancel" @click="showCategoryPicker = false">取消</button>
+          <div class="option-title">选择皮具品类</div>
+          <button type="button" class="option-action confirm" @click="confirmCategorySelection">确认</button>
+        </div>
+        <div class="option-list">
+          <button
+            v-for="option in categories"
+            :key="option.value"
+            type="button"
+            class="option-item"
+            :class="{ active: categoryPickerValue[0] === option.value }"
+            @click="selectCategoryOption(option)"
+          >
+            {{ option.text }}
+          </button>
+        </div>
+      </div>
     </van-popup>
 
     <van-popup v-model:show="showCraftPicker" position="bottom" round>
-      <van-picker
-        :columns="craftTypes"
-        show-toolbar
-        title="选择工艺类型"
-        @confirm="onCraftConfirm"
-        @cancel="showCraftPicker = false"
-      />
+      <div class="option-panel">
+        <div class="option-toolbar">
+          <button type="button" class="option-action cancel" @click="showCraftPicker = false">取消</button>
+          <div class="option-title">选择工艺类型</div>
+          <button type="button" class="option-action confirm" @click="confirmCraftSelection">确认</button>
+        </div>
+        <div class="option-list">
+          <button
+            v-for="option in craftTypes"
+            :key="option.value"
+            type="button"
+            class="option-item"
+            :class="{ active: craftPickerValue[0] === option.value }"
+            @click="selectCraftOption(option)"
+          >
+            {{ option.text }}
+          </button>
+        </div>
+      </div>
     </van-popup>
 
     <van-popup v-model:show="showStepTypePicker" position="bottom" round>
-      <van-picker
-        :columns="stepTypeOptions"
-        show-toolbar
-        title="选择步骤类型"
-        @confirm="onStepTypeConfirm"
-        @cancel="showStepTypePicker = false"
-      />
+      <div class="option-panel">
+        <div class="option-toolbar">
+          <button type="button" class="option-action cancel" @click="showStepTypePicker = false">取消</button>
+          <div class="option-title">选择步骤类型</div>
+          <button type="button" class="option-action confirm" @click="confirmStepTypeSelection">确认</button>
+        </div>
+        <div class="option-list">
+          <button
+            v-for="option in stepTypeOptions"
+            :key="option.value"
+            type="button"
+            class="option-item"
+            :class="{ active: stepTypePickerValue[0] === option.value }"
+            @click="selectStepTypeOption(option)"
+          >
+            {{ option.text }}
+          </button>
+        </div>
+      </div>
     </van-popup>
   </div>
 </template>
@@ -400,11 +433,14 @@ const categories = ref([])
 const craftTypes = ref([])
 const selectedCategoryName = ref('')
 const selectedCraftName = ref('')
+const categoryPickerValue = ref([])
+const craftPickerValue = ref([])
+const stepTypePickerValue = ref([])
 
 const stepTypeOptions = computed(() =>
   Object.entries(stepTypeMap).map(([key, val]) => ({
     text: `${val.icon} ${val.name}`,
-    id: key
+    value: key
   }))
 )
 
@@ -490,14 +526,64 @@ const removeMaterialItem = (sectionKey, idx) => {
   form.value.materialSummaryObj[sectionKey].splice(idx, 1)
 }
 
+const openCategoryPicker = () => {
+  if (!categoryPickerValue.value.length && categories.value.length) {
+    categoryPickerValue.value = [categories.value[0].value]
+  }
+  showCategoryPicker.value = true
+}
+
+const selectCategoryOption = (option) => {
+  categoryPickerValue.value = [option.value]
+}
+
+const confirmCategorySelection = () => {
+  const option = categories.value.find(item => item.value === categoryPickerValue.value[0]) || categories.value[0]
+  if (option) {
+    form.value.categoryId = option.value
+    selectedCategoryName.value = option.text
+    categoryPickerValue.value = [option.value]
+  }
+  showCategoryPicker.value = false
+}
+
+const openCraftPicker = () => {
+  if (!craftPickerValue.value.length && craftTypes.value.length) {
+    craftPickerValue.value = [craftTypes.value[0].value]
+  }
+  showCraftPicker.value = true
+}
+
+const selectCraftOption = (option) => {
+  craftPickerValue.value = [option.value]
+}
+
+const confirmCraftSelection = () => {
+  const option = craftTypes.value.find(item => item.value === craftPickerValue.value[0]) || craftTypes.value[0]
+  if (option) {
+    form.value.craftTypeId = option.value
+    selectedCraftName.value = option.text
+    craftPickerValue.value = [option.value]
+  }
+  showCraftPicker.value = false
+}
+
 const openStepTypePicker = (idx) => {
   currentStepIndex.value = idx
+  const currentType = form.value.steps[idx]?.stepType
+  stepTypePickerValue.value = currentType ? [currentType] : [stepTypeOptions.value[0]?.value]
   showStepTypePicker.value = true
 }
 
-const onStepTypeConfirm = ({ selectedOptions }) => {
-  if (currentStepIndex.value >= 0) {
-    form.value.steps[currentStepIndex.value].stepType = selectedOptions[0].id
+const selectStepTypeOption = (option) => {
+  stepTypePickerValue.value = [option.value]
+}
+
+const confirmStepTypeSelection = () => {
+  const option = stepTypeOptions.value.find(item => item.value === stepTypePickerValue.value[0]) || stepTypeOptions.value[0]
+  if (currentStepIndex.value >= 0 && option) {
+    form.value.steps[currentStepIndex.value].stepType = option.value
+    stepTypePickerValue.value = [option.value]
   }
   showStepTypePicker.value = false
 }
@@ -516,18 +602,6 @@ const afterStepRead = (file, stepIdx) => {
     form.value.steps[stepIdx]._fileList = []
   }
   form.value.steps[stepIdx]._fileList = form.value.steps[stepIdx]._fileList.concat(file)
-}
-
-const onCategoryConfirm = ({ selectedOptions }) => {
-  form.value.categoryId = selectedOptions[0].id
-  selectedCategoryName.value = selectedOptions[0].text
-  showCategoryPicker.value = false
-}
-
-const onCraftConfirm = ({ selectedOptions }) => {
-  form.value.craftTypeId = selectedOptions[0].id
-  selectedCraftName.value = selectedOptions[0].text
-  showCraftPicker.value = false
 }
 
 const submit = async () => {
@@ -610,8 +684,8 @@ onMounted(async () => {
     getCategories('category'),
     getCategories('craft')
   ])
-  categories.value = cats.map(c => ({ text: c.name, id: c.id }))
-  craftTypes.value = crafts.map(c => ({ text: c.name, id: c.id }))
+  categories.value = cats.map(c => ({ text: c.name, value: c.id }))
+  craftTypes.value = crafts.map(c => ({ text: c.name, value: c.id }))
 })
 </script>
 
@@ -881,5 +955,71 @@ onMounted(async () => {
 
 .add-step-btn {
   margin-top: 8px;
+}
+
+.option-panel {
+  background: #fff;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.option-toolbar {
+  height: 44px;
+  display: grid;
+  grid-template-columns: 72px 1fr 72px;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.option-title {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #323233;
+}
+
+.option-action {
+  height: 44px;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.option-action.cancel {
+  color: #969799;
+}
+
+.option-action.confirm {
+  color: #8b5a2b;
+  font-weight: 600;
+}
+
+.option-list {
+  overflow-y: auto;
+  padding: 8px 16px 18px;
+}
+
+.option-item {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+  color: #323233;
+  font-size: 15px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.option-item + .option-item {
+  margin-top: 4px;
+}
+
+.option-item.active {
+  background: #f5e6d3;
+  color: #8b5a2b;
+  font-weight: 600;
 }
 </style>

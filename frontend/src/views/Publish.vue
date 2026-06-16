@@ -162,6 +162,15 @@
                 />
 
                 <van-field
+                  v-model="step.timeCost"
+                  type="digit"
+                  label="耗时"
+                  placeholder="预计耗时"
+                  :suffix="'分钟'"
+                  maxlength="5"
+                />
+
+                <van-field
                   v-model="step.materials"
                   label="本步材料"
                   type="textarea"
@@ -391,6 +400,7 @@ const getStepTypeName = (type) => stepTypeMap[type]?.name || '请选择'
 const createEmptyStep = () => ({
   stepName: '',
   stepType: '',
+  timeCost: null,
   materials: '',
   tips: '',
   description: '',
@@ -637,6 +647,7 @@ const submit = async () => {
       .map((s, idx) => ({
         stepName: s.stepName.trim(),
         stepType: s.stepType,
+        timeCost: s.timeCost ? Number(s.timeCost) : null,
         materials: s.materials,
         tips: s.tips,
         description: s.description,

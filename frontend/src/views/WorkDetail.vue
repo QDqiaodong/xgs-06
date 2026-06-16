@@ -70,6 +70,11 @@
               </div>
 
               <div v-if="work.steps && work.steps.length" class="process-timeline">
+                <div v-if="totalTimeCost > 0" class="total-time-card">
+                  <van-icon name="clock-o" class="clock-icon" />
+                  <span class="total-time-label">预计总耗时</span>
+                  <span class="total-time-value">{{ formatTotalTime(totalTimeCost) }}</span>
+                </div>
                 <div
                   v-for="(step, sIdx) in work.steps"
                   :key="sIdx"
@@ -87,6 +92,10 @@
                       <span class="step-name">{{ step.stepName }}</span>
                       <van-tag v-if="step.stepType" size="medium" :type="getStepTagType(step.stepType)" plain>
                         {{ getStepTypeName(step.stepType) }}
+                      </van-tag>
+                      <van-tag v-if="step.timeCost && step.timeCost > 0" size="medium" type="primary">
+                        <van-icon name="clock-o" size="11" />
+                        {{ step.timeCost }}分钟
                       </van-tag>
                     </div>
                     <div v-if="getValidStepImages(step, sIdx).length" class="step-image-grid">
@@ -268,6 +277,19 @@ const processTotalCount = computed(() => {
   }
   return validProcessImages.value.length
 })
+
+const totalTimeCost = computed(() => {
+  if (!work.value || !work.value.steps || !work.value.steps.length) return 0
+  return work.value.steps.reduce((sum, step) => sum + (step.timeCost || 0), 0)
+})
+
+const formatTotalTime = (minutes) => {
+  if (!minutes) return '0分钟'
+  if (minutes < 60) return `${minutes}分钟`
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`
+}
 
 const getValidStepImages = (step, sIdx) => {
   const images = step.images || []
@@ -538,6 +560,35 @@ onMounted(() => loadWorkDetail())
 
 .process-timeline {
   padding: 16px;
+}
+
+.total-time-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #fef7ed 0%, #fff5e6 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #f5e6d3;
+}
+
+.clock-icon {
+  font-size: 20px;
+  color: #8b5a2b;
+}
+
+.total-time-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.total-time-value {
+  margin-left: auto;
+  font-size: 16px;
+  font-weight: 700;
+  color: #8b5a2b;
 }
 
 .timeline-item {

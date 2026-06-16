@@ -6,6 +6,7 @@ public class WorkStepDTO {
     private Long id;
     private String stepName;
     private String stepType;
+    private Integer timeCost;
     private String materials;
     private String tips;
     private String description;
@@ -34,6 +35,14 @@ public class WorkStepDTO {
 
     public void setStepType(String stepType) {
         this.stepType = stepType;
+    }
+
+    public Integer getTimeCost() {
+        return timeCost;
+    }
+
+    public void setTimeCost(Integer timeCost) {
+        this.timeCost = timeCost;
     }
 
     public String getMaterials() {

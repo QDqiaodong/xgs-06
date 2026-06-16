@@ -6,6 +6,10 @@
         工序分镜
         <span class="step-count">共 {{ steps.length }} 步</span>
       </h3>
+      <div v-if="totalTimeCost > 0" class="total-time">
+        <van-icon name="clock-o" />
+        <span>{{ formatTotalTime(totalTimeCost) }}</span>
+      </div>
     </div>
 
     <div class="step-tabs-wrapper">
@@ -41,9 +45,15 @@
             第 {{ currentIndex + 1 }} 步
           </div>
           <h4 class="step-title">{{ currentStep.stepName }}</h4>
-          <van-tag v-if="currentStep.stepType" :type="getStepTagType(currentStep.stepType)" plain>
-            {{ getStepTypeName(currentStep.stepType) }}
-          </van-tag>
+          <div class="step-tags">
+            <van-tag v-if="currentStep.stepType" :type="getStepTagType(currentStep.stepType)" plain>
+              {{ getStepTypeName(currentStep.stepType) }}
+            </van-tag>
+            <van-tag v-if="currentStep.timeCost && currentStep.timeCost > 0" type="primary">
+              <van-icon name="clock-o" size="11" />
+              {{ currentStep.timeCost }}分钟
+            </van-tag>
+          </div>
         </div>
 
         <div v-if="currentStep.images && currentStep.images.length" class="step-images">
@@ -136,6 +146,19 @@ const touchStartY = ref(0)
 const isHorizontalSwipe = ref(null)
 
 const currentStep = computed(() => props.steps[currentIndex.value] || {})
+
+const totalTimeCost = computed(() => {
+  if (!props.steps || !props.steps.length) return 0
+  return props.steps.reduce((sum, step) => sum + (step.timeCost || 0), 0)
+})
+
+const formatTotalTime = (minutes) => {
+  if (!minutes) return '0分钟'
+  if (minutes < 60) return `${minutes}分钟`
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`
+}
 
 const stepTypeMap = {
   cutting: { name: '裁切', icon: '✂️', class: 'type-cutting', tagType: 'danger' },
@@ -260,6 +283,20 @@ watch(() => props.steps, () => {
   margin-left: auto;
 }
 
+.total-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  width: fit-content;
+}
+
 .step-tabs-wrapper {
   background: #fff;
   padding: 12px 0;
@@ -376,6 +413,13 @@ watch(() => props.steps, () => {
 
 .step-header {
   margin-bottom: 16px;
+}
+
+.step-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
 }
 
 .step-badge {

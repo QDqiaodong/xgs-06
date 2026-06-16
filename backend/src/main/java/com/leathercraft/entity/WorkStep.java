@@ -19,6 +19,8 @@ public class WorkStep {
 
     private String stepType;
 
+    private Integer timeCost;
+
     private String materials;
 
     private String tips;
@@ -62,6 +64,14 @@ public class WorkStep {
 
     public void setStepType(String stepType) {
         this.stepType = stepType;
+    }
+
+    public Integer getTimeCost() {
+        return timeCost;
+    }
+
+    public void setTimeCost(Integer timeCost) {
+        this.timeCost = timeCost;
     }
 
     public String getMaterials() {

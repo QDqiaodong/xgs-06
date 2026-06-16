@@ -448,6 +448,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
                 step.setWorkId(workId);
                 step.setStepName(dto.getStepName());
                 step.setStepType(dto.getStepType());
+                step.setTimeCost(dto.getTimeCost());
                 step.setMaterials(dto.getMaterials());
                 step.setTips(dto.getTips());
                 step.setDescription(dto.getDescription());

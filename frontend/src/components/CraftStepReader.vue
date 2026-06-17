@@ -130,6 +130,7 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
 import { showImagePreview } from 'vant'
+import { getStepTypeInfo, getStepClass } from '@/utils/craftConfig'
 
 const props = defineProps({
   steps: {
@@ -160,18 +161,7 @@ const formatTotalTime = (minutes) => {
   return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`
 }
 
-const stepTypeMap = {
-  cutting: { name: '裁切', icon: '✂️', class: 'type-cutting', tagType: 'danger' },
-  sewing: { name: '缝制', icon: '🧵', class: 'type-sewing', tagType: 'primary' },
-  edge: { name: '封边', icon: '🎨', class: 'type-edge', tagType: 'warning' },
-  hardware: { name: '五金安装', icon: '🔩', class: 'type-hardware', tagType: 'success' },
-  shaping: { name: '塑形', icon: '✨', class: 'type-shaping', tagType: '' },
-  carving: { name: '皮雕', icon: '🗡️', class: 'type-carving', tagType: '' },
-  other: { name: '其他', icon: '📝', class: 'type-other', tagType: '' }
-}
-
-const getStepTypeInfo = (type) => stepTypeMap[type] || stepTypeMap.other
-const getStepTypeClass = (type) => getStepTypeInfo(type).class
+const getStepTypeClass = (type) => getStepClass(type)
 const getStepIcon = (type) => getStepTypeInfo(type).icon
 const getStepTypeName = (type) => getStepTypeInfo(type).name
 const getStepTagType = (type) => getStepTypeInfo(type).tagType || 'default'
@@ -352,14 +342,6 @@ watch(() => props.steps, () => {
   transform: scale(1.1);
 }
 
-.tab-icon.type-cutting { background: #ffe4e1; }
-.tab-icon.type-sewing { background: #e3f2fd; }
-.tab-icon.type-edge { background: #fff3e0; }
-.tab-icon.type-hardware { background: #e8f5e9; }
-.tab-icon.type-shaping { background: #f3e5f5; }
-.tab-icon.type-carving { background: #e0f7fa; }
-.tab-icon.type-other { background: #f5f5f5; }
-
 .tab-num {
   font-size: 11px;
   color: #999;
@@ -436,14 +418,6 @@ watch(() => props.steps, () => {
 .badge-icon {
   font-size: 14px;
 }
-
-.step-badge.type-cutting { background: #ffe4e1; color: #c62828; }
-.step-badge.type-sewing { background: #e3f2fd; color: #1565c0; }
-.step-badge.type-edge { background: #fff3e0; color: #e65100; }
-.step-badge.type-hardware { background: #e8f5e9; color: #2e7d32; }
-.step-badge.type-shaping { background: #f3e5f5; color: #6a1b9a; }
-.step-badge.type-carving { background: #e0f7fa; color: #00838f; }
-.step-badge.type-other { background: #f5f5f5; color: #616161; }
 
 .step-title {
   margin: 0 0 8px;

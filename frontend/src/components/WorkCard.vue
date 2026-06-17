@@ -11,9 +11,9 @@
           <van-tag v-if="work.categoryName" type="primary" size="medium" plain>
             {{ work.categoryName }}
           </van-tag>
-          <van-tag v-if="work.craftTypeName" type="success" size="medium" plain>
-            {{ work.craftTypeName }}
-          </van-tag>
+          <span v-if="work.craftTypeName" class="craft-badge-tag" :class="getCraftClass(work.craftTypeName)">
+            {{ getCraftInfoByName(work.craftTypeName).icon }} {{ work.craftTypeName }}
+          </span>
         </div>
         <div class="compact-stats">
           <van-icon name="eye-o" /> {{ work.viewCount || 0 }}
@@ -30,7 +30,12 @@
       <div class="card-content">
         <h3 class="card-title">{{ work.title }}</h3>
         <div class="card-meta">
-          <span class="category">{{ work.categoryName }}</span>
+          <div class="card-tags">
+            <span class="category">{{ work.categoryName }}</span>
+            <span v-if="work.craftTypeName" class="craft-badge-tag" :class="getCraftClass(work.craftTypeName)">
+              {{ getCraftInfoByName(work.craftTypeName).icon }} {{ work.craftTypeName }}
+            </span>
+          </div>
           <span class="stats">
             <van-icon name="eye-o" /> {{ work.viewCount || 0 }}
             <van-icon name="star-o" /> {{ work.favoriteCount || 0 }}
@@ -57,6 +62,7 @@
 
 <script setup>
 import MaterialSummary from './MaterialSummary.vue'
+import { getCraftInfoByName, getCraftClass } from '@/utils/craftConfig'
 
 defineProps({
   work: {
@@ -180,6 +186,13 @@ defineProps({
   color: #999;
 }
 
+.card-tags {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .card-materials {
   margin-bottom: 10px;
 }
@@ -220,5 +233,16 @@ defineProps({
 .nickname {
   font-size: 13px;
   color: #666;
+}
+
+.craft-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid transparent;
 }
 </style>

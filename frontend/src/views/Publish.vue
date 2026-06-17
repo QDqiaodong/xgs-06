@@ -483,6 +483,7 @@ import { useRouter } from 'vue-router'
 import { getCategories, publishWork } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast, showDialog } from 'vant'
+import { CRAFT_STYLES, getStepTypeInfo } from '@/utils/craftConfig'
 import {
   validateAllMaterials,
   validateSingleMaterial,
@@ -496,14 +497,9 @@ import {
 const router = useRouter()
 const userStore = useUserStore()
 
-const stepTypeMap = {
-  cutting: { name: '裁切', icon: '✂️' },
-  sewing: { name: '缝制', icon: '🧵' },
-  edge: { name: '封边', icon: '🎨' },
-  hardware: { name: '五金安装', icon: '🔩' },
-  shaping: { name: '塑形', icon: '✨' },
-  carving: { name: '皮雕', icon: '🗡️' },
-  other: { name: '其他', icon: '📝' }
+const getStepTypeName = (type) => {
+  if (typeof type !== 'string' || !type) return '请选择'
+  return getStepTypeInfo(type).name || '请选择'
 }
 
 const materialSections = [
@@ -524,11 +520,6 @@ const createEmptyMaterial = () => ({
   spec: '',
   quantity: ''
 })
-
-const getStepTypeName = (type) => {
-  if (typeof type !== 'string' || !type) return '请选择'
-  return stepTypeMap[type]?.name || '请选择'
-}
 
 const createEmptyStep = () => ({
   stepName: '',
@@ -600,10 +591,12 @@ const leatherTypePickerValue = ref([])
 const colorPickerValue = ref([])
 
 const stepTypeOptions = computed(() =>
-  Object.entries(stepTypeMap).map(([key, val]) => ({
-    text: `${val.icon} ${val.name}`,
-    value: key
-  }))
+  Object.entries(CRAFT_STYLES)
+    .filter(([key]) => key !== 'punch' && key !== 'coloring' && key !== 'thinning')
+    .map(([key, val]) => ({
+      text: `${val.icon} ${val.name}`,
+      value: key
+    }))
 )
 
 const goToStep = (idx) => {

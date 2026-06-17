@@ -64,8 +64,10 @@
             <span
               v-for="craft in craftProfile.topCraftTypes"
               :key="'craft-' + craft.id"
-              class="craft-tag craft-type-tag"
+              class="craft-tag craft-badge"
+              :class="getCraftClass(craft.name)"
             >
+              <span class="craft-badge-icon">{{ getCraftInfoByName(craft.name).icon }}</span>
               {{ craft.name }}<small v-if="craft.count"> {{ craft.count }}件</small>
             </span>
           </div>
@@ -118,6 +120,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { getCraftProfile } from '@/api'
+import { getCraftInfoByName, getCraftClass } from '@/utils/craftConfig'
 import BottomNav from '@/components/BottomNav.vue'
 
 const router = useRouter()
@@ -272,6 +275,7 @@ watch(() => userStore.userInfo?.id, loadCraftProfile)
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  border: 1px solid transparent;
 }
 
 .craft-tag small {
@@ -279,16 +283,14 @@ watch(() => userStore.userInfo?.id, loadCraftProfile)
   opacity: 0.7;
 }
 
+.craft-badge-icon {
+  font-size: 13px;
+}
+
 .category-tag {
   background: rgba(192, 132, 87, 0.15);
   color: #8b6914;
   border: 1px solid rgba(192, 132, 87, 0.3);
-}
-
-.craft-type-tag {
-  background: rgba(76, 143, 102, 0.12);
-  color: #3a7d4e;
-  border: 1px solid rgba(76, 143, 102, 0.25);
 }
 
 .material-tag {

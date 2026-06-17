@@ -164,7 +164,10 @@
 
         <div class="tags">
           <van-tag plain type="primary">{{ work.categoryName }}</van-tag>
-          <van-tag plain type="success" v-if="work.craftTypeName">{{ work.craftTypeName }}</van-tag>
+          <span v-if="work.craftTypeName" class="craft-tag" :class="getCraftTagClass(work.craftTypeName)">
+            <span class="craft-icon">{{ getCraftIcon(work.craftTypeName) }}</span>
+            <span>{{ work.craftTypeName }}</span>
+          </span>
         </div>
 
         <div class="stats">
@@ -181,7 +184,6 @@
             <div
               v-for="(craft, idx) in work.craftHighlights"
               :key="idx"
-              class="craft-tag"
               :class="getCraftTagClass(craft)"
             >
               <span class="craft-icon">{{ getCraftIcon(craft) }}</span>
@@ -213,6 +215,7 @@ import { useRoute } from 'vue-router'
 import { getWorkDetail, toggleFavorite } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast, showImagePreview } from 'vant'
+import { getStepTypeInfo, getCraftInfoByName, getCraftClass, getStepClass } from '@/utils/craftConfig'
 import CraftStepReader from '@/components/CraftStepReader.vue'
 import MaterialSummary from '@/components/MaterialSummary.vue'
 
@@ -226,18 +229,7 @@ const stepFailedImages = ref(new Set())
 const galleryTab = ref('finished')
 const finishedIndex = ref(0)
 
-const stepTypeMap = {
-  cutting: { name: '裁切', icon: '✂️', class: 'type-cutting', tagType: 'danger' },
-  sewing: { name: '缝制', icon: '🧵', class: 'type-sewing', tagType: 'primary' },
-  edge: { name: '封边', icon: '🎨', class: 'type-edge', tagType: 'warning' },
-  hardware: { name: '五金安装', icon: '🔩', class: 'type-hardware', tagType: 'success' },
-  shaping: { name: '塑形', icon: '✨', class: 'type-shaping', tagType: '' },
-  carving: { name: '皮雕', icon: '🗡️', class: 'type-carving', tagType: '' },
-  other: { name: '其他', icon: '📝', class: 'type-other', tagType: '' }
-}
-
-const getStepTypeInfo = (type) => stepTypeMap[type] || stepTypeMap.other
-const getStepTypeClass = (type) => getStepTypeInfo(type).class
+const getStepTypeClass = (type) => getStepClass(type)
 const getStepIcon = (type) => getStepTypeInfo(type).icon
 const getStepTypeName = (type) => getStepTypeInfo(type).name
 const getStepTagType = (type) => getStepTypeInfo(type).tagType || 'default'
@@ -350,22 +342,8 @@ const formatTime = (time) => {
   return date.toLocaleDateString()
 }
 
-const craftStyleMap = {
-  '封边': { icon: '🎨', class: 'craft-edge' },
-  '打孔': { icon: '⚡', class: 'craft-punch' },
-  '缝线': { icon: '🧵', class: 'craft-sewing' },
-  '上色': { icon: '🖌️', class: 'craft-color' },
-  '皮雕': { icon: '🗡️', class: 'craft-carving' },
-  '塑形': { icon: '✨', class: 'craft-shaping' },
-  '五金安装': { icon: '🔩', class: 'craft-hardware' },
-  '裁切': { icon: '✂️', class: 'craft-cutting' },
-  '编织': { icon: '🧶', class: 'craft-weaving' },
-  '削薄': { icon: '📏', class: 'craft-thinning' }
-}
-
-const getCraftInfo = (name) => craftStyleMap[name] || { icon: '📌', class: 'craft-default' }
-const getCraftIcon = (name) => getCraftInfo(name).icon
-const getCraftTagClass = (name) => getCraftInfo(name).class
+const getCraftIcon = (name) => getCraftInfoByName(name).icon
+const getCraftTagClass = (name) => `craft-tag ${getCraftClass(name)}`
 
 const handleFavorite = async () => {
   if (!userStore.isLoggedIn()) {
@@ -617,19 +595,10 @@ onMounted(() => loadWorkDetail())
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  background: #ede4d5;
   border: 2px solid #fff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   z-index: 1;
 }
-
-.node-circle.type-cutting { background: #ffe4e1; }
-.node-circle.type-sewing { background: #e3f2fd; }
-.node-circle.type-edge { background: #fff3e0; }
-.node-circle.type-hardware { background: #e8f5e9; }
-.node-circle.type-shaping { background: #f3e5f5; }
-.node-circle.type-carving { background: #e0f7fa; }
-.node-circle.type-other { background: #f5f5f5; }
 
 .node-line {
   flex: 1;
@@ -903,71 +872,5 @@ onMounted(() => loadWorkDetail())
 
 .craft-icon {
   font-size: 14px;
-}
-
-.craft-edge {
-  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-  color: #e65100;
-  border: 1px solid #ffcc80;
-}
-
-.craft-punch {
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
-}
-
-.craft-sewing {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  color: #1565c0;
-  border: 1px solid #90caf9;
-}
-
-.craft-color {
-  background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
-  color: #c2185b;
-  border: 1px solid #f48fb1;
-}
-
-.craft-carving {
-  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
-  color: #00838f;
-  border: 1px solid #80deea;
-}
-
-.craft-shaping {
-  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-  color: #6a1b9a;
-  border: 1px solid #ce93d8;
-}
-
-.craft-hardware {
-  background: linear-gradient(135deg, #fbe9e7 0%, #ffccbc 100%);
-  color: #d84315;
-  border: 1px solid #ffab91;
-}
-
-.craft-cutting {
-  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-  color: #c62828;
-  border: 1px solid #ef9a9a;
-}
-
-.craft-weaving {
-  background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
-  color: #f57f17;
-  border: 1px solid #fff59d;
-}
-
-.craft-thinning {
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  color: #33691e;
-  border: 1px solid #aed581;
-}
-
-.craft-default {
-  background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
-  color: #616161;
-  border: 1px solid #e0e0e0;
 }
 </style>

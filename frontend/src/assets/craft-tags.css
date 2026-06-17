@@ -1,0 +1,131 @@
+.craft-badge--cutting {
+  background: #ffe4e1;
+  color: #c62828;
+  border-color: #ef9a9a;
+}
+
+.craft-badge--sewing {
+  background: #e3f2fd;
+  color: #1565c0;
+  border-color: #90caf9;
+}
+
+.craft-badge--edge {
+  background: #fff3e0;
+  color: #e65100;
+  border-color: #ffcc80;
+}
+
+.craft-badge--hardware {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-color: #a5d6a7;
+}
+
+.craft-badge--shaping {
+  background: #f3e5f5;
+  color: #6a1b9a;
+  border-color: #ce93d8;
+}
+
+.craft-badge--carving {
+  background: #e0f7fa;
+  color: #00838f;
+  border-color: #80deea;
+}
+
+.craft-badge--weaving {
+  background: #fffde7;
+  color: #f57f17;
+  border-color: #fff59d;
+}
+
+.craft-badge--punch {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-color: #a5d6a7;
+}
+
+.craft-badge--coloring {
+  background: #fce4ec;
+  color: #c2185b;
+  border-color: #f48fb1;
+}
+
+.craft-badge--thinning {
+  background: #e8f5e9;
+  color: #33691e;
+  border-color: #aed581;
+}
+
+.craft-badge--other {
+  background: #f5f5f5;
+  color: #616161;
+  border-color: #e0e0e0;
+}
+
+.craft-tag--cutting {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.craft-tag--sewing {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+.craft-tag--edge {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+
+.craft-tag--hardware {
+  background: linear-gradient(135deg, #fbe9e7 0%, #ffccbc 100%);
+  color: #2e7d32;
+  border: 1px solid #ffab91;
+}
+
+.craft-tag--shaping {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  color: #6a1b9a;
+  border: 1px solid #ce93d8;
+}
+
+.craft-tag--carving {
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+  color: #00838f;
+  border: 1px solid #80deea;
+}
+
+.craft-tag--weaving {
+  background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+  color: #f57f17;
+  border: 1px solid #fff59d;
+}
+
+.craft-tag--punch {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.craft-tag--coloring {
+  background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);
+  color: #c2185b;
+  border: 1px solid #f48fb1;
+}
+
+.craft-tag--thinning {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #33691e;
+  border: 1px solid #aed581;
+}
+
+.craft-tag--other {
+  background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%);
+  color: #616161;
+  border: 1px solid #e0e0e0;
+}

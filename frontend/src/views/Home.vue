@@ -55,9 +55,10 @@
               </van-tag>
             </template>
             <template v-if="selectedCraft">
-              <van-tag type="success" closeable size="medium" @close="selectedCraft = null">
-                {{ getCraftName(selectedCraft) }}
-              </van-tag>
+              <span class="craft-badge-tag" :class="getCraftClass(getCraftName(selectedCraft))">
+                {{ getCraftInfoByName(getCraftName(selectedCraft)).icon }} {{ getCraftName(selectedCraft) }}
+              </span>
+              <van-icon name="cross" class="filter-close" @click="selectedCraft = null" />
             </template>
           </span>
           <van-button size="mini" type="default" @click="clearFilter">清除筛选</van-button>
@@ -98,6 +99,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getCategories } from '@/api'
+import { getCraftInfoByName, getCraftClass } from '@/utils/craftConfig'
 import WorkList from '@/components/WorkList.vue'
 import BottomNav from '@/components/BottomNav.vue'
 
@@ -302,5 +304,24 @@ onMounted(async () => {
 
 .filter-bar {
   background: #fff;
+}
+
+.craft-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.filter-close {
+  font-size: 14px;
+  color: #999;
+  margin-left: 2px;
+  cursor: pointer;
+  vertical-align: middle;
 }
 </style>

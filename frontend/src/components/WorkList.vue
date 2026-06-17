@@ -11,7 +11,8 @@
         <van-swipe-cell v-if="type === 'my'" v-for="work in list" :key="work.id">
           <WorkCard :work="work" />
           <template #right>
-            <van-button square type="warning" class="swipe-btn" text="下架" @click="handleOffline(work)" />
+            <van-button square type="success" class="swipe-btn" text="上架" @click="handleOnline(work)" v-if="work.status === 0" />
+            <van-button square type="warning" class="swipe-btn" text="下架" @click="handleOffline(work)" v-else />
             <van-button square type="danger" class="swipe-btn" text="删除" @click="handleDelete(work)" />
           </template>
         </van-swipe-cell>
@@ -24,7 +25,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { getWorkPage, offlineWork, deleteWork } from '@/api'
+import { getWorkPage, offlineWork, onlineWork, deleteWork } from '@/api'
 import WorkCard from './WorkCard.vue'
 import { useUserStore } from '@/store/user'
 import { showToast, showConfirmDialog } from 'vant'
@@ -114,10 +115,21 @@ const fetchList = async (isRefresh = false) => {
 
 const handleOffline = async (work) => {
   try {
-    await showConfirmDialog({ title: '确认下架', message: '下架后作品图片和步骤将被清理，确认下架吗？' })
+    await showConfirmDialog({ title: '确认下架', message: '下架后作品将仅自己可见，确认下架吗？' })
     await offlineWork(work.id, props.userId)
     showToast('已下架')
-    list.value = list.value.filter(w => w.id !== work.id)
+    const target = list.value.find(w => w.id === work.id)
+    if (target) target.status = 0
+  } catch {}
+}
+
+const handleOnline = async (work) => {
+  try {
+    await showConfirmDialog({ title: '确认上架', message: '上架后作品将公开可见，确认上架吗？' })
+    await onlineWork(work.id, props.userId)
+    showToast('已上架')
+    const target = list.value.find(w => w.id === work.id)
+    if (target) target.status = 1
   } catch {}
 }
 

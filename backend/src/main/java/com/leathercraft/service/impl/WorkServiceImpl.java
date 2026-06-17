@@ -392,7 +392,18 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setStatus(0);
         work.setUpdateTime(LocalDateTime.now());
         updateById(work);
-        cleanupWorkImages(id);
+    }
+
+    @Override
+    @Transactional
+    public void onlineWork(Long id, Long userId) {
+        Work work = getById(id);
+        if (work == null || !work.getUserId().equals(userId)) {
+            throw new RuntimeException("无权限操作");
+        }
+        work.setStatus(1);
+        work.setUpdateTime(LocalDateTime.now());
+        updateById(work);
     }
 
     @Override

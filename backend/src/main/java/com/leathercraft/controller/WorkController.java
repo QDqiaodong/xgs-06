@@ -73,6 +73,12 @@ public class WorkController {
         return Result.success();
     }
 
+    @PutMapping("/{id}/online")
+    public Result<Void> onlineWork(@PathVariable Long id, @RequestParam Long userId) {
+        workService.onlineWork(id, userId);
+        return Result.success();
+    }
+
     @DeleteMapping("/{id}/permanent")
     public Result<Void> deleteWork(@PathVariable Long id, @RequestParam Long userId) {
         workService.deleteWork(id, userId);

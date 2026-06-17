@@ -2,6 +2,7 @@
   <div class="work-card" @click="$router.push(`/work/${work.id}`)">
     <div class="card-image">
       <img :src="work.cover || (work.images && work.images[0])" :alt="work.title" loading="lazy" />
+      <div class="offline-badge" v-if="work.status === 0">已下架</div>
     </div>
     <div class="card-content">
       <h3 class="card-title">{{ work.title }}</h3>
@@ -54,6 +55,18 @@ defineProps({
   aspect-ratio: 4/3;
   overflow: hidden;
   background: #f0f0f0;
+  position: relative;
+}
+
+.offline-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .card-image img {

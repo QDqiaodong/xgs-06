@@ -525,7 +525,10 @@ const createEmptyMaterial = () => ({
   quantity: ''
 })
 
-const getStepTypeName = (type) => stepTypeMap[type]?.name || '请选择'
+const getStepTypeName = (type) => {
+  if (typeof type !== 'string' || !type) return '请选择'
+  return stepTypeMap[type]?.name || '请选择'
+}
 
 const createEmptyStep = () => ({
   stepName: '',
@@ -571,11 +574,21 @@ const showStepTypePicker = ref(false)
 const currentStepIndex = ref(-1)
 const categories = ref([])
 const craftTypes = ref([])
-const selectedCategoryName = ref('')
-const selectedCraftName = ref('')
 const categoryPickerValue = ref([])
 const craftPickerValue = ref([])
 const stepTypePickerValue = ref([])
+
+const selectedCategoryName = computed(() => {
+  if (!form.value.categoryId) return ''
+  const cat = categories.value.find(c => c.value === form.value.categoryId)
+  return cat ? cat.text : ''
+})
+
+const selectedCraftName = computed(() => {
+  if (!form.value.craftTypeId) return ''
+  const craft = craftTypes.value.find(c => c.value === form.value.craftTypeId)
+  return craft ? craft.text : ''
+})
 
 const materialValidation = ref({ errors: [], warnings: [], valid: true })
 const showQuickPick = ref(false)
@@ -757,7 +770,9 @@ const removeMaterialItem = (sectionKey, idx) => {
 }
 
 const openCategoryPicker = () => {
-  if (!categoryPickerValue.value.length && categories.value.length) {
+  if (form.value.categoryId) {
+    categoryPickerValue.value = [form.value.categoryId]
+  } else if (!categoryPickerValue.value.length && categories.value.length) {
     categoryPickerValue.value = [categories.value[0].value]
   }
   showCategoryPicker.value = true
@@ -771,14 +786,15 @@ const confirmCategorySelection = () => {
   const option = categories.value.find(item => item.value === categoryPickerValue.value[0]) || categories.value[0]
   if (option) {
     form.value.categoryId = option.value
-    selectedCategoryName.value = option.text
     categoryPickerValue.value = [option.value]
   }
   showCategoryPicker.value = false
 }
 
 const openCraftPicker = () => {
-  if (!craftPickerValue.value.length && craftTypes.value.length) {
+  if (form.value.craftTypeId) {
+    craftPickerValue.value = [form.value.craftTypeId]
+  } else if (!craftPickerValue.value.length && craftTypes.value.length) {
     craftPickerValue.value = [craftTypes.value[0].value]
   }
   showCraftPicker.value = true
@@ -792,7 +808,6 @@ const confirmCraftSelection = () => {
   const option = craftTypes.value.find(item => item.value === craftPickerValue.value[0]) || craftTypes.value[0]
   if (option) {
     form.value.craftTypeId = option.value
-    selectedCraftName.value = option.text
     craftPickerValue.value = [option.value]
   }
   showCraftPicker.value = false

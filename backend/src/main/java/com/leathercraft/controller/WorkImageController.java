@@ -1,6 +1,7 @@
 package com.leathercraft.controller;
 
 import com.leathercraft.common.Result;
+import com.leathercraft.common.UserContext;
 import com.leathercraft.dto.WorkImageArrangeDTO;
 import com.leathercraft.dto.WorkImageMoveDTO;
 import com.leathercraft.entity.WorkImage;
@@ -24,14 +25,16 @@ public class WorkImageController {
     }
 
     @PostMapping("/arrange")
-    public Result<Void> arrangeImages(@RequestBody WorkImageArrangeDTO dto, @RequestParam Long userId) {
-        workImageService.arrangeImages(dto, userId);
+    public Result<Void> arrangeImages(@RequestBody WorkImageArrangeDTO dto) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        workImageService.arrangeImages(dto, currentUserId);
         return Result.success();
     }
 
     @PostMapping("/move")
-    public Result<Void> moveImage(@RequestBody WorkImageMoveDTO dto, @RequestParam Long userId) {
-        workImageService.moveImage(dto, userId);
+    public Result<Void> moveImage(@RequestBody WorkImageMoveDTO dto) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        workImageService.moveImage(dto, currentUserId);
         return Result.success();
     }
 
@@ -39,9 +42,9 @@ public class WorkImageController {
     public Result<Void> updateImageSort(
             @RequestParam Long workId,
             @RequestParam Long imageId,
-            @RequestParam Integer sort,
-            @RequestParam Long userId) {
-        workImageService.updateImageSort(workId, imageId, sort, userId);
+            @RequestParam Integer sort) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        workImageService.updateImageSort(workId, imageId, sort, currentUserId);
         return Result.success();
     }
 
@@ -50,18 +53,18 @@ public class WorkImageController {
             @RequestParam Long workId,
             @RequestParam String imageUrl,
             @RequestParam Integer type,
-            @RequestParam(required = false) Integer sort,
-            @RequestParam Long userId) {
-        workImageService.addImage(workId, imageUrl, type, sort, userId);
+            @RequestParam(required = false) Integer sort) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        workImageService.addImage(workId, imageUrl, type, sort, currentUserId);
         return Result.success();
     }
 
     @DeleteMapping
     public Result<Void> removeImage(
             @RequestParam Long workId,
-            @RequestParam Long imageId,
-            @RequestParam Long userId) {
-        workImageService.removeImage(workId, imageId, userId);
+            @RequestParam Long imageId) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        workImageService.removeImage(workId, imageId, currentUserId);
         return Result.success();
     }
 }

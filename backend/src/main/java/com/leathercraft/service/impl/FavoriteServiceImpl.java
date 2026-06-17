@@ -22,29 +22,25 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteMapper, Favorite> i
     @Override
     @Transactional
     public void toggleFavorite(Long userId, Long workId) {
+        if (userId == null || userId <= 0 || workId == null || workId <= 0) {
+            throw new RuntimeException("参数无效");
+        }
+
         LambdaQueryWrapper<Favorite> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Favorite::getUserId, userId)
                 .eq(Favorite::getWorkId, workId);
         Favorite favorite = getOne(wrapper);
 
-        Work work = workMapper.selectById(workId);
-
         if (favorite != null) {
             removeById(favorite.getId());
-            if (work != null && work.getFavoriteCount() > 0) {
-                work.setFavoriteCount(work.getFavoriteCount() - 1);
-                workMapper.updateById(work);
-            }
+            workMapper.decrementFavoriteCountById(workId);
         } else {
             Favorite newFavorite = new Favorite();
             newFavorite.setUserId(userId);
             newFavorite.setWorkId(workId);
             newFavorite.setCreateTime(LocalDateTime.now());
             save(newFavorite);
-            if (work != null) {
-                work.setFavoriteCount(work.getFavoriteCount() + 1);
-                workMapper.updateById(work);
-            }
+            workMapper.incrementFavoriteCountById(workId);
         }
     }
 

@@ -76,23 +76,20 @@ const fetchList = async (isRefresh = false) => {
       const { getMyWorks } = await import('@/api')
       data = await getMyWorks({
         page: currentPage,
-        size: pageSize,
-        userId: props.userId
+        size: pageSize
       })
     } else if (props.type === 'favorite') {
       const { getFavoriteWorks } = await import('@/api')
       data = await getFavoriteWorks({
         page: currentPage,
-        size: pageSize,
-        userId: props.userId
+        size: pageSize
       })
     } else {
       data = await getWorkPage({
         page: currentPage,
         size: pageSize,
         categoryId: props.categoryId,
-        craftTypeId: props.craftTypeId,
-        userId: userStore.userInfo?.id
+        craftTypeId: props.craftTypeId
       })
     }
 
@@ -120,7 +117,7 @@ const fetchList = async (isRefresh = false) => {
 const handleOffline = async (work) => {
   try {
     await showConfirmDialog({ title: '确认下架', message: '下架后作品将仅自己可见，确认下架吗？' })
-    await offlineWork(work.id, props.userId)
+    await offlineWork(work.id)
     showToast('已下架')
     const target = list.value.find(w => w.id === work.id)
     if (target) target.status = 0
@@ -130,7 +127,7 @@ const handleOffline = async (work) => {
 const handleOnline = async (work) => {
   try {
     await showConfirmDialog({ title: '确认上架', message: '上架后作品将公开可见，确认上架吗？' })
-    await onlineWork(work.id, props.userId)
+    await onlineWork(work.id)
     showToast('已上架')
     const target = list.value.find(w => w.id === work.id)
     if (target) target.status = 1
@@ -140,7 +137,7 @@ const handleOnline = async (work) => {
 const handleDelete = async (work) => {
   try {
     await showConfirmDialog({ title: '确认删除', message: '删除后不可恢复，确认删除吗？' })
-    await deleteWork(work.id, props.userId)
+    await deleteWork(work.id)
     showToast('已删除')
     list.value = list.value.filter(w => w.id !== work.id)
   } catch {}

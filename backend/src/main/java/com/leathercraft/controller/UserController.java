@@ -1,6 +1,7 @@
 package com.leathercraft.controller;
 
 import com.leathercraft.common.Result;
+import com.leathercraft.common.UserContext;
 import com.leathercraft.dto.CraftProfileDTO;
 import com.leathercraft.dto.LoginDTO;
 import com.leathercraft.entity.User;
@@ -50,14 +51,12 @@ public class UserController {
     }
 
     @PutMapping
-    public Result<Void> update(@RequestBody User user, @RequestHeader(value = "userId", required = false) Long userIdHeader) {
-        if (userIdHeader == null) {
-            return Result.error("请先登录");
-        }
+    public Result<Void> update(@RequestBody User user) {
+        Long currentUserId = UserContext.requireCurrentUserId();
         if (user.getId() == null) {
-            user.setId(userIdHeader);
+            user.setId(currentUserId);
         }
-        if (!userIdHeader.equals(user.getId())) {
+        if (!currentUserId.equals(user.getId())) {
             return Result.error("无权限修改他人资料");
         }
         User existUser = userService.getById(user.getId());

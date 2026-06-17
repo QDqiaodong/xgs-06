@@ -9,20 +9,17 @@ export const getCraftProfile = (userId) => request.get(`/user/craft-profile/${us
 export const getCategories = (type) => request.get('/category/list', { params: { type } })
 
 export const getWorkPage = (params) => request.get('/work/page', { params })
-export const getWorkDetail = (id, userId, config = {}) => request.get(`/work/${id}`, {
-  ...config,
-  params: { userId, ...(config.params || {}) }
-})
-export const publishWork = (data, userId) => request.post('/work', data, { params: { userId } })
-export const updateWork = (data, userId) => request.put('/work', data, { params: { userId } })
-export const offlineWork = (id, userId) => request.delete(`/work/${id}`, { params: { userId } })
-export const onlineWork = (id, userId) => request.put(`/work/${id}/online`, null, { params: { userId } })
-export const deleteWork = (id, userId) => request.delete(`/work/${id}/permanent`, { params: { userId } })
+export const getWorkDetail = (id, config = {}) => request.get(`/work/${id}`, config)
+export const publishWork = (data) => request.post('/work', data)
+export const updateWork = (data) => request.put('/work', data)
+export const offlineWork = (id) => request.delete(`/work/${id}`)
+export const onlineWork = (id) => request.put(`/work/${id}/online`)
+export const deleteWork = (id) => request.delete(`/work/${id}/permanent`)
 export const getMyWorks = (params) => request.get('/work/my', { params })
 export const getFavoriteWorks = (params) => request.get('/work/favorite', { params })
 export const getHotWorks = () => request.get('/work/hot')
 export const validateMaterials = (data) => request.post('/work/validate-materials', data)
 export const getMaterialReference = () => request.get('/work/material-reference')
 
-export const toggleFavorite = (userId, workId) => request.post('/favorite/toggle', null, { params: { userId, workId } })
-export const checkFavorite = (userId, workId) => request.get('/favorite/check', { params: { userId, workId } })
+export const toggleFavorite = (workId) => request.post('/favorite/toggle', null, { params: { workId } })
+export const checkFavorite = (workId) => request.get('/favorite/check', { params: { workId } })

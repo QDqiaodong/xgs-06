@@ -913,7 +913,7 @@ const submit = async () => {
       processImages,
       steps: steps.length ? steps : undefined,
       materialSummary: hasMaterialSummary ? JSON.stringify(materialSummaryData) : undefined
-    }, userStore.userInfo.id)
+    })
 
     showToast('发布成功')
     setTimeout(() => {

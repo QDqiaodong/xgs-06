@@ -350,7 +350,7 @@ const handleFavorite = async () => {
     showToast('请先登录')
     return
   }
-  await toggleFavorite(userStore.userInfo.id, route.params.id)
+  await toggleFavorite(route.params.id)
   work.value.isFavorite = !work.value.isFavorite
   work.value.favoriteCount += work.value.isFavorite ? 1 : -1
   showToast(work.value.isFavorite ? '收藏成功' : '已取消收藏')
@@ -364,7 +364,7 @@ const loadWorkDetail = async (retryCount = 8) => {
   try {
     for (let attempt = 0; attempt <= retryCount; attempt++) {
       try {
-        work.value = await getWorkDetail(route.params.id, userStore.userInfo?.id, { silentError: true })
+        work.value = await getWorkDetail(route.params.id, { silentError: true })
         if (!work.value) {
           loadError.value = '作品不存在或已下架'
         }

@@ -8,6 +8,7 @@ import com.leathercraft.dto.CraftProfileDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 import java.util.Map;
@@ -93,4 +94,13 @@ public interface WorkMapper extends BaseMapper<Work> {
             "AND w.materials IS NOT NULL AND w.materials != '' " +
             "ORDER BY w.create_time DESC LIMIT 20")
     List<Map<String, Object>> selectMaterialsForProfile(@Param("userId") Long userId);
+
+    @Update("UPDATE t_work SET view_count = view_count + 1 WHERE id = #{id} AND status = 1 AND deleted = 0")
+    int incrementViewById(@Param("id") Long id);
+
+    @Update("UPDATE t_work SET favorite_count = favorite_count + 1 WHERE id = #{id} AND status = 1 AND deleted = 0")
+    int incrementFavoriteCountById(@Param("id") Long id);
+
+    @Update("UPDATE t_work SET favorite_count = favorite_count - 1 WHERE id = #{id} AND status = 1 AND deleted = 0 AND favorite_count > 0")
+    int decrementFavoriteCountById(@Param("id") Long id);
 }

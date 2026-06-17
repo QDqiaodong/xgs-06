@@ -438,14 +438,14 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
     @Override
     public void incrementViewCount(Long id) {
-        String key = WORK_VIEW_KEY + id;
-        redisTemplate.opsForValue().increment(key);
-        redisTemplate.expire(key, 1, TimeUnit.HOURS);
-
-        Work work = getById(id);
-        if (work != null) {
-            work.setViewCount(work.getViewCount() + 1);
-            updateById(work);
+        if (id == null || id <= 0) {
+            return;
+        }
+        int updated = baseMapper.incrementViewById(id);
+        if (updated > 0) {
+            String key = WORK_VIEW_KEY + id;
+            redisTemplate.opsForValue().increment(key);
+            redisTemplate.expire(key, 1, TimeUnit.HOURS);
         }
     }
 

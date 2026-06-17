@@ -2,6 +2,7 @@ package com.leathercraft.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.leathercraft.common.Result;
+import com.leathercraft.common.UserContext;
 import com.leathercraft.dto.WorkPublishDTO;
 import com.leathercraft.entity.Work;
 import com.leathercraft.service.WorkService;
@@ -41,14 +42,15 @@ public class WorkController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long craftTypeId,
-            @RequestParam(required = false) Long userId) {
-        return Result.success(workService.getWorkPage(page, size, categoryId, craftTypeId, userId));
+            @RequestParam(required = false) Long craftTypeId) {
+        Long currentUserId = UserContext.getCurrentUserId();
+        return Result.success(workService.getWorkPage(page, size, categoryId, craftTypeId, currentUserId));
     }
 
     @GetMapping("/{id}")
-    public Result<Work> getWorkDetail(@PathVariable Long id, @RequestParam(required = false) Long userId) {
-        Work work = workService.getWorkDetail(id, userId);
+    public Result<Work> getWorkDetail(@PathVariable Long id) {
+        Long currentUserId = UserContext.getCurrentUserId();
+        Work work = workService.getWorkDetail(id, currentUserId);
         if (work != null) {
             workService.incrementViewCount(id);
         }
@@ -56,49 +58,54 @@ public class WorkController {
     }
 
     @PostMapping
-    public Result<Void> publishWork(@RequestBody WorkPublishDTO dto, @RequestParam Long userId) {
-        workService.publishWork(dto, userId);
+    public Result<Void> publishWork(@RequestBody WorkPublishDTO dto) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        workService.publishWork(dto, currentUserId);
         return Result.success();
     }
 
     @PutMapping
-    public Result<Void> updateWork(@RequestBody WorkPublishDTO dto, @RequestParam Long userId) {
-        workService.updateWork(dto, userId);
+    public Result<Void> updateWork(@RequestBody WorkPublishDTO dto) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        workService.updateWork(dto, currentUserId);
         return Result.success();
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> offlineWork(@PathVariable Long id, @RequestParam Long userId) {
-        workService.offlineWork(id, userId);
+    public Result<Void> offlineWork(@PathVariable Long id) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        workService.offlineWork(id, currentUserId);
         return Result.success();
     }
 
     @PutMapping("/{id}/online")
-    public Result<Void> onlineWork(@PathVariable Long id, @RequestParam Long userId) {
-        workService.onlineWork(id, userId);
+    public Result<Void> onlineWork(@PathVariable Long id) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        workService.onlineWork(id, currentUserId);
         return Result.success();
     }
 
     @DeleteMapping("/{id}/permanent")
-    public Result<Void> deleteWork(@PathVariable Long id, @RequestParam Long userId) {
-        workService.deleteWork(id, userId);
+    public Result<Void> deleteWork(@PathVariable Long id) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        workService.deleteWork(id, currentUserId);
         return Result.success();
     }
 
     @GetMapping("/my")
     public Result<IPage<Work>> getUserWorks(
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam Long userId) {
-        return Result.success(workService.getUserWorks(page, size, userId));
+            @RequestParam(defaultValue = "10") Integer size) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        return Result.success(workService.getUserWorks(page, size, currentUserId));
     }
 
     @GetMapping("/favorite")
     public Result<IPage<Work>> getFavoriteWorks(
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam Long userId) {
-        return Result.success(workService.getFavoriteWorks(page, size, userId));
+            @RequestParam(defaultValue = "10") Integer size) {
+        Long currentUserId = UserContext.requireCurrentUserId();
+        return Result.success(workService.getFavoriteWorks(page, size, currentUserId));
     }
 
     @GetMapping("/hot")

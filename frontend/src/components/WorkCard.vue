@@ -1,33 +1,57 @@
 <template>
-  <div class="work-card" @click="$router.push(`/work/${work.id}`)">
-    <div class="card-image">
-      <img :src="work.cover || (work.images && work.images[0])" :alt="work.title" loading="lazy" />
-      <div class="offline-badge" v-if="work.status === 0">已下架</div>
-    </div>
-    <div class="card-content">
-      <h3 class="card-title">{{ work.title }}</h3>
-      <div class="card-meta">
-        <span class="category">{{ work.categoryName }}</span>
-        <span class="stats">
+  <div class="work-card" :class="density" @click="$router.push(`/work/${work.id}`)">
+    <template v-if="density === 'compact'">
+      <div class="compact-image">
+        <img :src="work.cover || (work.images && work.images[0])" :alt="work.title" loading="lazy" />
+        <div class="offline-badge" v-if="work.status === 0">已下架</div>
+      </div>
+      <div class="compact-content">
+        <h3 class="compact-title">{{ work.title }}</h3>
+        <div class="compact-tags">
+          <van-tag v-if="work.categoryName" type="primary" size="medium" plain>
+            {{ work.categoryName }}
+          </van-tag>
+          <van-tag v-if="work.craftTypeName" type="success" size="medium" plain>
+            {{ work.craftTypeName }}
+          </van-tag>
+        </div>
+        <div class="compact-stats">
           <van-icon name="eye-o" /> {{ work.viewCount || 0 }}
           <van-icon name="star-o" /> {{ work.favoriteCount || 0 }}
-        </span>
+        </div>
       </div>
-      <div class="card-materials" v-if="work.materialBrief">
-        <span class="material-brief">{{ work.materialBrief }}</span>
+    </template>
+
+    <template v-else>
+      <div class="card-image">
+        <img :src="work.cover || (work.images && work.images[0])" :alt="work.title" loading="lazy" />
+        <div class="offline-badge" v-if="work.status === 0">已下架</div>
       </div>
-      <div class="card-materials" v-else-if="work.materialSummary">
-        <MaterialSummary :material-summary="work.materialSummary" compact />
+      <div class="card-content">
+        <h3 class="card-title">{{ work.title }}</h3>
+        <div class="card-meta">
+          <span class="category">{{ work.categoryName }}</span>
+          <span class="stats">
+            <van-icon name="eye-o" /> {{ work.viewCount || 0 }}
+            <van-icon name="star-o" /> {{ work.favoriteCount || 0 }}
+          </span>
+        </div>
+        <div class="card-materials" v-if="work.materialBrief">
+          <span class="material-brief">{{ work.materialBrief }}</span>
+        </div>
+        <div class="card-materials" v-else-if="work.materialSummary">
+          <MaterialSummary :material-summary="work.materialSummary" compact />
+        </div>
+        <div class="card-author">
+          <van-image
+            round
+            size="24"
+            :src="work.avatar || 'https://img.yzcdn.cn/vant/cat.jpeg'"
+          />
+          <span class="nickname">{{ work.nickname }}</span>
+        </div>
       </div>
-      <div class="card-author">
-        <van-image
-          round
-          size="24"
-          :src="work.avatar || 'https://img.yzcdn.cn/vant/cat.jpeg'"
-        />
-        <span class="nickname">{{ work.nickname }}</span>
-      </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -38,6 +62,10 @@ defineProps({
   work: {
     type: Object,
     required: true
+  },
+  density: {
+    type: String,
+    default: 'standard'
   }
 })
 </script>
@@ -48,6 +76,54 @@ defineProps({
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.work-card.compact {
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.compact-image {
+  width: 100%;
+  aspect-ratio: 1/1;
+  overflow: hidden;
+  background: #f0f0f0;
+  position: relative;
+}
+
+.compact-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.compact-content {
+  padding: 8px 10px;
+}
+
+.compact-title {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #333;
+}
+
+.compact-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.compact-stats {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  color: #999;
 }
 
 .card-image {
@@ -67,6 +143,13 @@ defineProps({
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
+}
+
+.compact .offline-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  top: 6px;
+  left: 6px;
 }
 
 .card-image img {

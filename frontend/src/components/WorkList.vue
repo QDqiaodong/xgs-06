@@ -7,16 +7,16 @@
       finished-text="没有更多了"
       @load="onLoad"
     >
-      <div class="work-grid">
+      <div class="work-grid" :class="density">
         <van-swipe-cell v-if="type === 'my'" v-for="work in list" :key="work.id">
-          <WorkCard :work="work" />
+          <WorkCard :work="work" :density="density" />
           <template #right>
             <van-button square type="success" class="swipe-btn" text="上架" @click="handleOnline(work)" v-if="work.status === 0" />
             <van-button square type="warning" class="swipe-btn" text="下架" @click="handleOffline(work)" v-else />
             <van-button square type="danger" class="swipe-btn" text="删除" @click="handleDelete(work)" />
           </template>
         </van-swipe-cell>
-        <WorkCard v-if="type !== 'my'" v-for="work in list" :key="work.id" :work="work" />
+        <WorkCard v-if="type !== 'my'" v-for="work in list" :key="work.id" :work="work" :density="density" />
       </div>
     </van-list>
     </van-pull-refresh>
@@ -46,6 +46,10 @@ const props = defineProps({
   type: {
     type: String,
     default: 'all'
+  },
+  density: {
+    type: String,
+    default: 'standard'
   }
 })
 
@@ -153,7 +157,7 @@ const onRefresh = () => {
 }
 
 watch(
-  () => [props.categoryId, props.craftTypeId, props.userId, props.type],
+  () => [props.categoryId, props.craftTypeId, props.userId, props.type, props.density],
   () => {
     list.value = []
     page.value = 1
@@ -173,6 +177,11 @@ watch(
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+
+.work-grid.compact {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
 
 .swipe-btn {

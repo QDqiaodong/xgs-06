@@ -64,8 +64,30 @@
         </div>
       </div>
 
+      <div class="density-bar">
+        <span class="density-label">浏览密度</span>
+        <div class="density-switch">
+          <div
+            class="density-btn"
+            :class="{ active: viewDensity === 'standard' }"
+            @click="viewDensity = 'standard'"
+          >
+            <van-icon name="grid-o" size="16" />
+            <span>标准</span>
+          </div>
+          <div
+            class="density-btn"
+            :class="{ active: viewDensity === 'compact' }"
+            @click="viewDensity = 'compact'"
+          >
+            <van-icon name="apps-o" size="16" />
+            <span>紧凑</span>
+          </div>
+        </div>
+      </div>
+
       <div class="filter-bar">
-        <WorkList :category-id="selectedCategory" :craft-type-id="selectedCraft" />
+        <WorkList :category-id="selectedCategory" :craft-type-id="selectedCraft" :density="viewDensity" />
       </div>
     </div>
 
@@ -83,6 +105,7 @@ const categories = ref([])
 const craftTypes = ref([])
 const selectedCategory = ref(null)
 const selectedCraft = ref(null)
+const viewDensity = ref('standard')
 
 const getCategoryName = (id) => {
   const cat = categories.value.find(c => c.id === id)
@@ -234,6 +257,47 @@ onMounted(async () => {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+.density-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.density-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.density-switch {
+  display: flex;
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.density-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #666;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.density-btn.active {
+  background: #fff;
+  color: #c08457;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .filter-bar {

@@ -19,6 +19,8 @@ public class Category {
 
     private Integer sort;
 
+    private Integer enabled;
+
     private LocalDateTime createTime;
 
     public Long getId() {
@@ -59,6 +61,14 @@ public class Category {
 
     public void setSort(Integer sort) {
         this.sort = sort;
+    }
+
+    public Integer getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Integer enabled) {
+        this.enabled = enabled;
     }
 
     public LocalDateTime getCreateTime() {

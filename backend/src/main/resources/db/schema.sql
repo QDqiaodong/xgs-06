@@ -22,9 +22,11 @@ CREATE TABLE IF NOT EXISTS t_category (
   type VARCHAR(20) NOT NULL COMMENT 'category-品类, craft-工艺',
   icon VARCHAR(200),
   sort INT DEFAULT 0,
+  enabled TINYINT DEFAULT 1 COMMENT '1-启用, 0-禁用',
   create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_type (type),
-  INDEX idx_sort (sort)
+  INDEX idx_sort (sort),
+  UNIQUE KEY uk_type_name (type, name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS t_work (

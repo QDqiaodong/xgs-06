@@ -15,6 +15,7 @@ public class WorkPublishDTO {
     private Long craftTypeId;
     private List<String> images;
     private List<String> processImages;
+    private List<String> detailImages;
     private List<WorkStepDTO> steps;
 
     public Long getId() {
@@ -111,6 +112,14 @@ public class WorkPublishDTO {
 
     public void setProcessImages(List<String> processImages) {
         this.processImages = processImages;
+    }
+
+    public List<String> getDetailImages() {
+        return detailImages;
+    }
+
+    public void setDetailImages(List<String> detailImages) {
+        this.detailImages = detailImages;
     }
 
     public List<WorkStepDTO> getSteps() {

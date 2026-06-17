@@ -3,6 +3,7 @@ package com.leathercraft.service.impl;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.leathercraft.common.WorkImageType;
 import com.leathercraft.dto.CraftProfileDTO;
 import com.leathercraft.dto.WorkPublishDTO;
 import com.leathercraft.dto.WorkStepDTO;
@@ -79,7 +80,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         IPage<Work> result = baseMapper.selectWorkPage(pageParam, categoryId, craftTypeId);
         markFinishedIfOverflow(result);
         result.getRecords().forEach(work -> {
-            work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), 1));
+            work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), WorkImageType.FINISHED));
             if (userId != null) {
                 work.setIsFavorite(checkFavorite(userId, work.getId()));
             }
@@ -112,8 +113,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
             }
         }
         if (work != null) {
-            work.setImages(workImageMapper.selectImagesByWorkId(id, 1));
-            work.setProcessImages(workImageMapper.selectImagesByWorkId(id, 2));
+            work.setImages(workImageMapper.selectImagesByWorkId(id, WorkImageType.FINISHED));
+            work.setProcessImages(workImageMapper.selectImagesByWorkId(id, WorkImageType.PROCESS));
+            work.setDetailImages(workImageMapper.selectImagesByWorkId(id, WorkImageType.DETAIL));
             loadWorkSteps(work);
             extractCraftHighlights(work);
             if (userId != null) {
@@ -345,8 +347,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setUpdateTime(LocalDateTime.now());
         save(work);
 
-        saveWorkImages(work.getId(), null, dto.getImages(), 1);
-        saveWorkImages(work.getId(), null, dto.getProcessImages(), 2);
+        saveWorkImages(work.getId(), null, dto.getImages(), WorkImageType.FINISHED);
+        saveWorkImages(work.getId(), null, dto.getProcessImages(), WorkImageType.PROCESS);
+        saveWorkImages(work.getId(), null, dto.getDetailImages(), WorkImageType.DETAIL);
         saveWorkSteps(work.getId(), dto.getSteps());
     }
 
@@ -373,8 +376,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
         cleanupWorkImages(dto.getId());
 
-        saveWorkImages(work.getId(), null, dto.getImages(), 1);
-        saveWorkImages(work.getId(), null, dto.getProcessImages(), 2);
+        saveWorkImages(work.getId(), null, dto.getImages(), WorkImageType.FINISHED);
+        saveWorkImages(work.getId(), null, dto.getProcessImages(), WorkImageType.PROCESS);
+        saveWorkImages(work.getId(), null, dto.getDetailImages(), WorkImageType.DETAIL);
         saveWorkSteps(work.getId(), dto.getSteps());
     }
 
@@ -397,7 +401,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         IPage<Work> result = baseMapper.selectUserWorks(pageParam, userId);
         markFinishedIfOverflow(result);
         result.getRecords().forEach(work -> {
-            work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), 1));
+            work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), WorkImageType.FINISHED));
         });
         return result;
     }
@@ -408,7 +412,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         IPage<Work> result = baseMapper.selectFavoriteWorks(pageParam, userId);
         markFinishedIfOverflow(result);
         result.getRecords().forEach(work -> {
-            work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), 1));
+            work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), WorkImageType.FINISHED));
             work.setIsFavorite(true);
         });
         return result;
@@ -417,7 +421,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     @Override
     public List<Work> getHotWorks() {
         List<Work> hotWorks = baseMapper.selectHotWorks(10);
-        hotWorks.forEach(work -> work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), 1)));
+        hotWorks.forEach(work -> work.setImages(workImageMapper.selectImagesByWorkId(work.getId(), WorkImageType.FINISHED)));
         return hotWorks;
     }
 
@@ -466,7 +470,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
                 workStepMapper.insert(step);
 
                 if (dto.getImages() != null && !dto.getImages().isEmpty()) {
-                    saveWorkImages(workId, step.getId(), dto.getImages(), 2);
+                    saveWorkImages(workId, step.getId(), dto.getImages(), WorkImageType.PROCESS);
                 }
             }
         }

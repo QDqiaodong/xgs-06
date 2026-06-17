@@ -66,6 +66,9 @@ public class Work {
     private List<String> processImages;
 
     @TableField(exist = false)
+    private List<String> detailImages;
+
+    @TableField(exist = false)
     private List<WorkStep> steps;
 
     @TableField(exist = false)
@@ -256,6 +259,14 @@ public class Work {
 
     public void setProcessImages(List<String> processImages) {
         this.processImages = processImages;
+    }
+
+    public List<String> getDetailImages() {
+        return detailImages;
+    }
+
+    public void setDetailImages(List<String> detailImages) {
+        this.detailImages = detailImages;
     }
 
     public List<WorkStep> getSteps() {

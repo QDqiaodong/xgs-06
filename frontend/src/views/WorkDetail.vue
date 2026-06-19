@@ -205,9 +205,7 @@
         <p class="content-text">{{ work.content }}</p>
 
         <van-divider v-if="work.materialSummary || work.materials">材料用量速览</van-divider>
-        <MaterialSummary v-if="work.materialSummary" :material-summary="work.materialSummary" />
-        <p class="content-text materials-text" v-if="work.materials && !work.materialSummary">{{ work.materials }}</p>
-        <p class="content-text materials-text" v-if="work.materials && work.materialSummary">{{ work.materials }}</p>
+        <MaterialSummary v-if="work.materialSummary || work.materials" :material-summary="work.materialSummary" :materials-text="work.materials" />
 
         <CraftStepReader v-if="work.steps && work.steps.length" :steps="work.steps" />
 

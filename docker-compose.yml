@@ -79,10 +79,10 @@ services:
         condition: service_healthy
     # 严格绑定 IPv4 回环地址
     ports:
-      - "127.0.0.1:${BACKEND_PORT}:9034"
+      - "127.0.0.1:${BACKEND_PORT}:19034"
     environment:
       TZ: ${TZ}
-      SERVER_PORT: 9034
+      SERVER_PORT: 19034
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}

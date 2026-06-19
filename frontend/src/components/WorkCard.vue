@@ -58,8 +58,8 @@
         <div class="card-materials" v-if="work.materialBrief">
           <span class="material-brief">{{ work.materialBrief }}</span>
         </div>
-        <div class="card-materials" v-else-if="work.materialSummary">
-          <MaterialSummary :material-summary="work.materialSummary" compact />
+        <div class="card-materials" v-else-if="work.materialSummary || work.materials">
+          <MaterialSummary :material-summary="work.materialSummary" :materials-text="work.materials" compact />
         </div>
         <div class="card-author">
           <van-image

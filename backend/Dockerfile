@@ -48,7 +48,7 @@ RUN ln -sf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezon
 COPY --from=builder /app/target/*.jar app.jar
 
 # 容器内部监听端口
-EXPOSE 9034
+EXPOSE 19034
 
 # 启动命令
 ENTRYPOINT ["java", \

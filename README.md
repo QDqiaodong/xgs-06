@@ -53,10 +53,10 @@
 
 | 服务 | 宿主机端口 | 容器内端口 | 绑定地址 | 说明 |
 |------|----------|----------|---------|------|
-| **前端 (Nginx)** | 3008 | 80 | 127.0.0.1 | 避开 80, 8080 |
-| **后端 (Spring Boot)** | 8088 | 8088 | 127.0.0.1 | 避开 8080 |
-| **MySQL** | 3309 | 3306 | 127.0.0.1 | 避开 3306 |
-| **Redis** | 6380 | 6379 | 127.0.0.1 | 避开 6379 |
+| **前端 (Nginx)** | 18034 | 80 | 127.0.0.1 | 避开 80, 8080 |
+| **后端 (Spring Boot)** | 19034 | 19034 | 127.0.0.1 | 避开 8080 |
+| **MySQL** | 13334 | 3306 | 127.0.0.1 | 避开 3306 |
+| **Redis** | 16334 | 6379 | 127.0.0.1 | 避开 6379 |
 
 ### 端口约束
 - 所有服务严格绑定 IPv4 回环地址 `127.0.0.1`，禁止外网访问
@@ -95,9 +95,9 @@ docker compose down
 
 构建启动成功后访问：
 
-- **前端**: http://localhost:3008
-- **前端**: http://127.0.0.1:3008
-- **后端 API**: http://127.0.0.1:8088/api
+- **前端**: http://localhost:18034
+- **前端**: http://127.0.0.1:18034
+- **后端 API**: http://127.0.0.1:19034/api
 
 ### 测试账号
 
@@ -203,7 +203,7 @@ DOCKER_REGISTRY=
     ├── Dockerfile               # 前端镜像构建（分层缓存）
     ├── .npmrc                   # NPM 国内镜像源
     ├── nginx.conf               # Nginx 配置
-    ├── vite.config.js           # Vite 配置（绑定 127.0.0.1:3008）
+    ├── vite.config.js           # Vite 配置（绑定 127.0.0.1:18034）
     ├── package.json             # NPM 依赖
     └── src/
         ├── views/               # 页面组件
@@ -229,10 +229,10 @@ COMPOSE_PROJECT_NAME=leather-craft-platform
 DOCKER_REGISTRY=
 
 # 端口配置
-FRONTEND_PORT=3008
-BACKEND_PORT=8088
-MYSQL_PORT=3309
-REDIS_PORT=6380
+FRONTEND_PORT=18034
+BACKEND_PORT=19034
+MYSQL_PORT=13334
+REDIS_PORT=16334
 
 # MySQL 配置
 MYSQL_ROOT_PASSWORD=root123456
@@ -250,7 +250,7 @@ TZ=Asia/Shanghai
 ```javascript
 server: {
   host: '127.0.0.1',    // 仅绑定 IPv4 回环地址
-  port: 3008,            // 固定端口
+  port: 18034,            // 固定端口
   strictPort: true        // 端口占用直接报错
 }
 ```

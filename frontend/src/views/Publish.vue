@@ -64,6 +64,20 @@
               placeholder="请选择工艺"
               @click="openCraftPicker"
             />
+            <van-field
+              :model-value="selectedDifficultyText"
+              is-link
+              readonly
+              label="版型难度"
+              placeholder="请选择难度等级"
+              @click="openDifficultyPicker"
+            >
+              <template #right-icon>
+                <span v-if="suggestedDifficulty && form.difficulty !== suggestedDifficulty.key" class="diff-suggest">
+                  建议：{{ suggestedDifficulty.icon }}{{ suggestedDifficulty.name }}
+                </span>
+              </template>
+            </van-field>
           </van-cell-group>
         </div>
 
@@ -200,6 +214,11 @@
         </div>
 
         <div v-show="currentStep === 2" class="step-panel">
+          <div v-if="stepDifficultyHint" class="step-difficulty-hint" :class="'hint--' + stepDifficultyHint.level">
+            <van-icon :name="stepDifficultyHint.icon" />
+            <span>{{ stepDifficultyHint.text }}</span>
+          </div>
+
           <van-cell-group inset title="工序步骤（分镜）">
             <div class="steps-editor">
               <div
@@ -474,6 +493,45 @@
         </div>
       </div>
     </van-popup>
+
+    <van-popup v-model:show="showDifficultyPicker" position="bottom" round>
+      <div class="option-panel">
+        <div class="option-toolbar">
+          <button type="button" class="option-action cancel" @click="showDifficultyPicker = false">取消</button>
+          <div class="option-title">选择版型难度</div>
+          <button type="button" class="option-action confirm" @click="confirmDifficultySelection">确认</button>
+        </div>
+        <div class="difficulty-list">
+          <div
+            v-for="key in DIFFICULTY_ORDER"
+            :key="key"
+            class="difficulty-option"
+            :class="{
+              active: difficultyPickerValue[0] === key,
+              suggested: suggestedDifficulty?.key === key
+            }"
+            @click="selectDifficultyOption(key)"
+          >
+            <div class="diff-header">
+              <span class="diff-icon">{{ DIFFICULTY_LEVELS[key].icon }}</span>
+              <span class="diff-name">{{ DIFFICULTY_LEVELS[key].name }}</span>
+              <span
+                v-if="suggestedDifficulty?.key === key"
+                class="diff-suggest-tag"
+              >
+                推荐
+              </span>
+            </div>
+            <div class="diff-detail">{{ DIFFICULTY_LEVELS[key].description }}</div>
+            <div class="diff-range">
+              对应步骤：{{ DIFFICULTY_LEVELS[key].maxSteps === Infinity
+                ? `${DIFFICULTY_LEVELS[DIFFICULTY_ORDER[DIFFICULTY_ORDER.indexOf(key) - 1]].maxSteps + 1}步以上`
+                : `1-${DIFFICULTY_LEVELS[key].maxSteps}步` }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
@@ -483,7 +541,7 @@ import { useRouter } from 'vue-router'
 import { getCategories, publishWork } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast, showDialog } from 'vant'
-import { CRAFT_STYLES, getStepTypeInfo } from '@/utils/craftConfig'
+import { CRAFT_STYLES, getStepTypeInfo, DIFFICULTY_LEVELS, DIFFICULTY_ORDER, getSuggestedDifficultyBySteps, getDifficultyInfo } from '@/utils/craftConfig'
 import {
   validateAllMaterials,
   validateSingleMaterial,
@@ -548,6 +606,7 @@ const form = ref({
   craftSteps: '',
   categoryId: null,
   craftTypeId: null,
+  difficulty: null,
   steps: [createEmptyStep()],
   materialSummaryObj: {
     mainMaterials: [],
@@ -568,6 +627,8 @@ const craftTypes = ref([])
 const categoryPickerValue = ref([])
 const craftPickerValue = ref([])
 const stepTypePickerValue = ref([])
+const showDifficultyPicker = ref(false)
+const difficultyPickerValue = ref([])
 
 const selectedCategoryName = computed(() => {
   if (!form.value.categoryId) return ''
@@ -579,6 +640,57 @@ const selectedCraftName = computed(() => {
   if (!form.value.craftTypeId) return ''
   const craft = craftTypes.value.find(c => c.value === form.value.craftTypeId)
   return craft ? craft.text : ''
+})
+
+const selectedDifficultyText = computed(() => {
+  if (!form.value.difficulty) return ''
+  const info = getDifficultyInfo(form.value.difficulty)
+  return info ? `${info.icon} ${info.name}` : ''
+})
+
+const validStepCount = computed(() => {
+  const steps = form.value.steps || []
+  return steps.filter(s => s.stepName && s.stepName.trim()).length
+})
+
+const suggestedDifficulty = computed(() => {
+  if (!validStepCount.value) return null
+  return getSuggestedDifficultyBySteps(validStepCount.value)
+})
+
+const stepDifficultyHint = computed(() => {
+  if (!validStepCount.value) {
+    return {
+      level: 'info',
+      icon: 'info-o',
+      text: '请先添加工序步骤，系统将根据步骤数量推荐合适的难度等级'
+    }
+  }
+  const suggested = suggestedDifficulty.value
+  if (!suggested) return null
+
+  if (!form.value.difficulty) {
+    return {
+      level: 'suggest',
+      icon: 'bulb-o',
+      text: `当前 ${validStepCount.value} 个步骤，推荐标记为【${suggested.icon} ${suggested.name}】，请在"基础信息"步骤中选择版型难度`
+    }
+  }
+
+  if (form.value.difficulty !== suggested.key) {
+    const current = getDifficultyInfo(form.value.difficulty)
+    return {
+      level: 'warn',
+      icon: 'warning-o',
+      text: `当前 ${validStepCount.value} 个步骤建议标记为【${suggested.icon} ${suggested.name}】，当前选择【${current?.icon || ''} ${current?.name || form.value.difficulty}】可能与步骤数不匹配`
+    }
+  }
+
+  return {
+    level: 'ok',
+    icon: 'passed',
+    text: `版型难度【${suggested.icon} ${suggested.name}】与步骤数匹配，共 ${validStepCount.value} 个工序步骤`
+  }
 })
 
 const materialValidation = ref({ errors: [], warnings: [], valid: true })
@@ -826,6 +938,29 @@ const confirmStepTypeSelection = () => {
   showStepTypePicker.value = false
 }
 
+const openDifficultyPicker = () => {
+  if (form.value.difficulty) {
+    difficultyPickerValue.value = [form.value.difficulty]
+  } else if (suggestedDifficulty.value) {
+    difficultyPickerValue.value = [suggestedDifficulty.value.key]
+  } else if (!difficultyPickerValue.value.length && DIFFICULTY_ORDER.length) {
+    difficultyPickerValue.value = [DIFFICULTY_ORDER[0]]
+  }
+  showDifficultyPicker.value = true
+}
+
+const selectDifficultyOption = (key) => {
+  difficultyPickerValue.value = [key]
+}
+
+const confirmDifficultySelection = () => {
+  const key = difficultyPickerValue.value[0]
+  if (key) {
+    form.value.difficulty = key
+  }
+  showDifficultyPicker.value = false
+}
+
 const afterRead = (file) => {
   fileList.value = fileList.value.concat(file)
   form.value.cover = file[0]?.content || ''
@@ -912,7 +1047,8 @@ const submit = async () => {
       images,
       processImages,
       steps: steps.length ? steps : undefined,
-      materialSummary: hasMaterialSummary ? JSON.stringify(materialSummaryData) : undefined
+      materialSummary: hasMaterialSummary ? JSON.stringify(materialSummaryData) : undefined,
+      difficulty: form.value.difficulty || undefined
     })
 
     showToast('发布成功')
@@ -1379,5 +1515,126 @@ onMounted(async () => {
   background: #f5e6d3;
   color: #8b5a2b;
   font-weight: 600;
+}
+
+.diff-suggest {
+  font-size: 11px;
+  color: #1989fa;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.step-difficulty-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  margin: 0 16px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.step-difficulty-hint .van-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.step-difficulty-hint.hint--info {
+  background: #e6f7ff;
+  color: #0050b3;
+  border: 1px solid #91d5ff;
+}
+
+.step-difficulty-hint.hint--suggest {
+  background: #f6ffed;
+  color: #389e0d;
+  border: 1px solid #b7eb8f;
+}
+
+.step-difficulty-hint.hint--warn {
+  background: #fff7e6;
+  color: #d46b08;
+  border: 1px solid #ffd591;
+}
+
+.step-difficulty-hint.hint--ok {
+  background: #e6fffb;
+  color: #08979c;
+  border: 1px solid #87e8de;
+}
+
+.difficulty-list {
+  overflow-y: auto;
+  padding: 8px 16px 18px;
+}
+
+.difficulty-option {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  border: 2px solid #f0f0f0;
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.difficulty-option:last-child {
+  margin-bottom: 0;
+}
+
+.difficulty-option.active {
+  border-color: #c08457;
+  background: #fdf7f0;
+  box-shadow: 0 2px 8px rgba(192, 132, 87, 0.15);
+}
+
+.difficulty-option.suggested {
+  border-color: #95de64;
+  background: #fcffe6;
+}
+
+.difficulty-option.active.suggested {
+  border-color: #c08457;
+  background: #fdf7f0;
+}
+
+.diff-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.diff-icon {
+  font-size: 20px;
+}
+
+.diff-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.diff-suggest-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #52c41a;
+  color: #fff;
+  font-weight: 500;
+}
+
+.diff-detail {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.diff-range {
+  font-size: 12px;
+  color: #999;
 }
 </style>

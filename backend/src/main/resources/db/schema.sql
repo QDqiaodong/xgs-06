@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS t_work (
   craft_steps TEXT,
   category_id BIGINT,
   craft_type_id BIGINT,
+  difficulty VARCHAR(20) COMMENT '版型难度: beginner-入门, intermediate-进阶, advanced-复杂',
   view_count INT DEFAULT 0,
   favorite_count INT DEFAULT 0,
   status TINYINT DEFAULT 1 COMMENT '1-发布, 0-下架',
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS t_work (
   INDEX idx_user_id (user_id),
   INDEX idx_category_id (category_id),
   INDEX idx_craft_type_id (craft_type_id),
+  INDEX idx_difficulty (difficulty),
   INDEX idx_status (status),
   INDEX idx_create_time (create_time),
   INDEX idx_view_count (view_count),
@@ -121,28 +123,28 @@ INSERT INTO t_category (name, type, sort) VALUES
 INSERT INTO t_user (username, nickname, password, bio) VALUES
 ('admin', '皮艺达人', '123456', '热爱手工皮具，专注植鞣革创作');
 
-INSERT INTO t_work (user_id, title, cover, content, materials, material_summary, material_brief, craft_steps, category_id, craft_type_id, view_count, favorite_count, status) VALUES
+INSERT INTO t_work (user_id, title, cover, content, materials, material_summary, material_brief, craft_steps, category_id, craft_type_id, difficulty, view_count, favorite_count, status) VALUES
 (1, '手工植鞣革短夹制作教程', 'https://picsum.photos/400/300?random=1', 
  '分享一款简约风格的植鞣革短夹制作全过程，适合新手入门学习。', 
  '意大利植鞣革2.0mm，麻线，黄铜四合扣',
  '{"mainMaterials":[{"name":"意大利植鞣革","spec":"2.0mm","quantity":"1.5平方英尺"}],"auxMaterials":[{"name":"麻线","spec":"0.6mm","quantity":"3米"},{"name":"黄铜四合扣","spec":"12mm","quantity":"2套"},{"name":"黄胶","spec":"","quantity":"少量"}],"tools":[{"name":"裁皮刀","spec":"","quantity":"1把"},{"name":"菱斩","spec":"4mm","quantity":"1把"},{"name":"手缝针","spec":"","quantity":"2支"},{"name":"锤子","spec":"","quantity":"1把"},{"name":"橡胶垫","spec":"","quantity":"1块"}]}',
  '主材：意大利植鞣革2.0mm；辅材：麻线0.6mm、黄铜四合扣12mm、黄胶；工具：裁皮刀、菱斩4mm、手缝针、锤子、橡胶垫',
  '1. 裁下料片\n2. 打斩\n3. 缝制\n4. 封边\n5. 安装五金',
- 1, 1, 128, 45, 1),
+ 1, 1, 'beginner', 128, 45, 1),
 (1, '复古风卡包制作分享', 'https://picsum.photos/400/300?random=2',
  '做了一个复古风格的多卡位卡包，可以放8张卡，还有一个零钱位。',
  '日本枥木皮1.5mm，酒红色，铜质气眼',
  '{"mainMaterials":[{"name":"日本枥木皮","spec":"1.5mm 酒红色","quantity":"1平方英尺"}],"auxMaterials":[{"name":"麻线","spec":"0.45mm","quantity":"2米"},{"name":"铜质气眼","spec":"5mm","quantity":"8个"},{"name":"拉链","spec":"10cm","quantity":"1条"}],"tools":[{"name":"裁皮刀","spec":"","quantity":"1把"},{"name":"菱斩","spec":"3mm","quantity":"1把"},{"name":"手缝针","spec":"","quantity":"2支"},{"name":"打孔冲","spec":"5mm","quantity":"1支"}]}',
  '主材：日本枥木皮1.5mm 酒红色；辅材：麻线0.45mm、铜质气眼5mm、拉链10cm；工具：裁皮刀、菱斩3mm、手缝针、打孔冲5mm',
  '1. 设计版型\n2. 裁切皮料\n3. 制作卡位\n4. 组合缝制\n5. 磨边封边',
- 2, 3, 256, 89, 1),
+ 2, 3, 'intermediate', 256, 89, 1),
 (1, '手工皮带的封边技巧', 'https://picsum.photos/400/300?random=3',
  '很多朋友问封边怎么才能做到镜面效果，这里分享一下我的经验。',
  '意大利植鞣革皮带条，床面处理剂，砂纸400-2000目',
  '{"mainMaterials":[{"name":"意大利植鞣革皮带条","spec":"38mm宽","quantity":"120cm"}],"auxMaterials":[{"name":"床面处理剂(CMC)","spec":"","quantity":"少量"},{"name":"边油","spec":"深棕色","quantity":"少量"},{"name":"抛光蜡","spec":"","quantity":"少量"}],"tools":[{"name":"裁皮刀","spec":"","quantity":"1把"},{"name":"砂纸","spec":"400/800/1200/2000目","quantity":"各1张"},{"name":"圆木棒","spec":"","quantity":"1根"},{"name":"帆布","spec":"","quantity":"1块"}]}',
  '主材：意大利植鞣革皮带条38mm宽；辅材：床面处理剂(CMC)、边油深棕色、抛光蜡；工具：裁皮刀、砂纸400/800/1200/2000目、圆木棒、帆布',
  '1. 裁皮带\n2. 削薄尾部\n3. 粗磨\n4. 床面处理\n5. 细磨\n6. 抛光',
- 3, 5, 512, 156, 1);
+ 3, 5, 'advanced', 512, 156, 1);
 
 INSERT INTO t_work_step (work_id, step_name, step_type, time_cost, materials, tips, description, sort) VALUES
 (1, '裁切下料', 'cutting', 30, '意大利植鞣革2.0mm，裁皮刀，钢尺', '注意刀刃角度保持45度，沿钢尺边缘垂直下刀，一次性裁断避免毛边', '根据纸样裁下料片，注意皮料的纹理方向，大面和卡位要合理布局节省皮料', 0),

@@ -14,6 +14,13 @@
           <span v-if="work.craftTypeName" class="craft-badge-tag" :class="getCraftClass(work.craftTypeName)">
             {{ getCraftInfoByName(work.craftTypeName).icon }} {{ work.craftTypeName }}
           </span>
+          <span
+            v-if="work.difficulty && getDifficultyInfo(work.difficulty)"
+            class="difficulty-badge-tag"
+            :class="getDifficultyClass(work.difficulty)"
+          >
+            {{ getDifficultyInfo(work.difficulty).icon }} {{ getDifficultyInfo(work.difficulty).name }}
+          </span>
         </div>
         <div class="compact-stats">
           <van-icon name="eye-o" /> {{ work.viewCount || 0 }}
@@ -34,6 +41,13 @@
             <span class="category">{{ work.categoryName }}</span>
             <span v-if="work.craftTypeName" class="craft-badge-tag" :class="getCraftClass(work.craftTypeName)">
               {{ getCraftInfoByName(work.craftTypeName).icon }} {{ work.craftTypeName }}
+            </span>
+            <span
+              v-if="work.difficulty && getDifficultyInfo(work.difficulty)"
+              class="difficulty-badge-tag"
+              :class="getDifficultyClass(work.difficulty)"
+            >
+              {{ getDifficultyInfo(work.difficulty).icon }} {{ getDifficultyInfo(work.difficulty).name }}
             </span>
           </div>
           <span class="stats">
@@ -62,7 +76,7 @@
 
 <script setup>
 import MaterialSummary from './MaterialSummary.vue'
-import { getCraftInfoByName, getCraftClass } from '@/utils/craftConfig'
+import { getCraftInfoByName, getCraftClass, getDifficultyInfo, getDifficultyClass } from '@/utils/craftConfig'
 
 defineProps({
   work: {
@@ -244,5 +258,34 @@ defineProps({
   font-size: 11px;
   font-weight: 500;
   border: 1px solid transparent;
+}
+
+.difficulty-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.difficulty-badge-tag.difficulty-badge--beginner {
+  background: #f6ffed;
+  color: #389e0d;
+  border-color: #b7eb8f;
+}
+
+.difficulty-badge-tag.difficulty-badge--intermediate {
+  background: #fff7e6;
+  color: #d46b08;
+  border-color: #ffd591;
+}
+
+.difficulty-badge-tag.difficulty-badge--advanced {
+  background: #fff1f0;
+  color: #cf1322;
+  border-color: #ffa39e;
 }
 </style>

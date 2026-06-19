@@ -34,6 +34,8 @@ public class Work {
 
     private Long craftTypeId;
 
+    private String difficulty;
+
     private Integer viewCount;
 
     private Integer favoriteCount;
@@ -163,6 +165,14 @@ public class Work {
 
     public void setCraftTypeId(Long craftTypeId) {
         this.craftTypeId = craftTypeId;
+    }
+
+    public String getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(String difficulty) {
+        this.difficulty = difficulty;
     }
 
     public Integer getViewCount() {

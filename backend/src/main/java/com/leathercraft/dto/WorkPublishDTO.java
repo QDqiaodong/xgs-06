@@ -13,6 +13,7 @@ public class WorkPublishDTO {
     private String craftSteps;
     private Long categoryId;
     private Long craftTypeId;
+    private String difficulty;
     private List<String> images;
     private List<String> processImages;
     private List<String> detailImages;
@@ -96,6 +97,14 @@ public class WorkPublishDTO {
 
     public void setCraftTypeId(Long craftTypeId) {
         this.craftTypeId = craftTypeId;
+    }
+
+    public String getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(String difficulty) {
+        this.difficulty = difficulty;
     }
 
     public List<String> getImages() {

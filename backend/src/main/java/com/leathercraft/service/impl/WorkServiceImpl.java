@@ -55,6 +55,13 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     private static final String WORK_VIEW_KEY = "work:view:";
     private static final int MATERIAL_BRIEF_MAX_LENGTH = 100;
 
+    private static final String DIFFICULTY_BEGINNER = "beginner";
+    private static final String DIFFICULTY_INTERMEDIATE = "intermediate";
+    private static final String DIFFICULTY_ADVANCED = "advanced";
+
+    private static final int BEGINNER_MAX_STEPS = 3;
+    private static final int INTERMEDIATE_MAX_STEPS = 7;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final String[][] CRAFT_KEYWORDS = {
@@ -340,6 +347,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setCraftSteps(dto.getCraftSteps());
         work.setCategoryId(dto.getCategoryId());
         work.setCraftTypeId(dto.getCraftTypeId());
+        work.setDifficulty(validateAndNormalizeDifficulty(dto.getDifficulty(), dto.getSteps()));
         work.setViewCount(0);
         work.setFavoriteCount(0);
         work.setStatus(1);
@@ -371,6 +379,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setCraftSteps(dto.getCraftSteps());
         work.setCategoryId(dto.getCategoryId());
         work.setCraftTypeId(dto.getCraftTypeId());
+        work.setDifficulty(validateAndNormalizeDifficulty(dto.getDifficulty(), dto.getSteps()));
         work.setUpdateTime(LocalDateTime.now());
         updateById(work);
 
@@ -543,6 +552,57 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         result.merge(materialValidator.validateMaterialSummary(materialSummary));
         result.merge(materialValidator.validateMaterialsText(materialsText));
         return result;
+    }
+
+    private String validateAndNormalizeDifficulty(String difficulty, List<WorkStepDTO> stepDTOs) {
+        int stepCount = (stepDTOs != null) ? stepDTOs.size() : 0;
+
+        if (stepCount == 0) {
+            if (difficulty == null || difficulty.trim().isEmpty()) {
+                return null;
+            }
+        }
+
+        String expectedDifficulty;
+        if (stepCount <= BEGINNER_MAX_STEPS) {
+            expectedDifficulty = DIFFICULTY_BEGINNER;
+        } else if (stepCount <= INTERMEDIATE_MAX_STEPS) {
+            expectedDifficulty = DIFFICULTY_INTERMEDIATE;
+        } else {
+            expectedDifficulty = DIFFICULTY_ADVANCED;
+        }
+
+        if (difficulty == null || difficulty.trim().isEmpty()) {
+            return expectedDifficulty;
+        }
+
+        String trimmedDifficulty = difficulty.trim();
+        boolean isValid = DIFFICULTY_BEGINNER.equals(trimmedDifficulty)
+                || DIFFICULTY_INTERMEDIATE.equals(trimmedDifficulty)
+                || DIFFICULTY_ADVANCED.equals(trimmedDifficulty);
+
+        if (!isValid) {
+            throw new RuntimeException("版型难度值无效，有效值为：beginner(入门)、intermediate(进阶)、advanced(复杂)");
+        }
+
+        if (stepCount > 0) {
+            String expectedName = getDifficultyName(expectedDifficulty);
+            String providedName = getDifficultyName(trimmedDifficulty);
+            if (!trimmedDifficulty.equals(expectedDifficulty)) {
+                throw new RuntimeException(
+                        "版型难度与工艺步骤数量不匹配：当前" + stepCount + "个步骤，建议标记为\""
+                                + expectedName + "\"，而不是\"" + providedName + "\"");
+            }
+        }
+
+        return trimmedDifficulty;
+    }
+
+    private String getDifficultyName(String difficulty) {
+        if (DIFFICULTY_BEGINNER.equals(difficulty)) return "入门";
+        if (DIFFICULTY_INTERMEDIATE.equals(difficulty)) return "进阶";
+        if (DIFFICULTY_ADVANCED.equals(difficulty)) return "复杂";
+        return difficulty;
     }
 
     @Override

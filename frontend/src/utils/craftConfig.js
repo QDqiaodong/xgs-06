@@ -12,6 +12,62 @@ export const CRAFT_STYLES = {
   other: { name: '其他', icon: '📝', tagType: 'default' }
 }
 
+export const DIFFICULTY_LEVELS = {
+  beginner: {
+    key: 'beginner',
+    name: '入门',
+    icon: '🌱',
+    tagType: 'success',
+    color: '#52c41a',
+    bgColor: '#f6ffed',
+    borderColor: '#b7eb8f',
+    maxSteps: 3,
+    description: '适合新手入门，步骤简洁明了'
+  },
+  intermediate: {
+    key: 'intermediate',
+    name: '进阶',
+    icon: '🔥',
+    tagType: 'warning',
+    color: '#fa8c16',
+    bgColor: '#fff7e6',
+    borderColor: '#ffd591',
+    maxSteps: 7,
+    description: '需要一定基础，步骤较为丰富'
+  },
+  advanced: {
+    key: 'advanced',
+    name: '复杂',
+    icon: '💎',
+    tagType: 'danger',
+    color: '#f5222d',
+    bgColor: '#fff1f0',
+    borderColor: '#ffa39e',
+    maxSteps: Infinity,
+    description: '高阶作品，工序复杂且技巧性强'
+  }
+}
+
+export const DIFFICULTY_ORDER = ['beginner', 'intermediate', 'advanced']
+
+export const getSuggestedDifficultyBySteps = (stepCount) => {
+  if (!stepCount || stepCount <= DIFFICULTY_LEVELS.beginner.maxSteps) {
+    return DIFFICULTY_LEVELS.beginner
+  }
+  if (stepCount <= DIFFICULTY_LEVELS.intermediate.maxSteps) {
+    return DIFFICULTY_LEVELS.intermediate
+  }
+  return DIFFICULTY_LEVELS.advanced
+}
+
+export const getDifficultyInfo = (key) => {
+  return DIFFICULTY_LEVELS[key] || null
+}
+
+export const getDifficultyClass = (key) => {
+  return key ? `difficulty-badge--${key}` : ''
+}
+
 export const CRAFT_NAME_TO_KEY = {}
 for (const [key, val] of Object.entries(CRAFT_STYLES)) {
   CRAFT_NAME_TO_KEY[val.name] = key

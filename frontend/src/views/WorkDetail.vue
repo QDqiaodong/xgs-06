@@ -168,6 +168,15 @@
             <span class="craft-icon">{{ getCraftIcon(work.craftTypeName) }}</span>
             <span>{{ work.craftTypeName }}</span>
           </span>
+          <span
+            v-if="work.difficulty && getDifficultyInfo(work.difficulty)"
+            class="difficulty-tag"
+            :class="'difficulty-tag--' + work.difficulty"
+          >
+            <span class="difficulty-icon">{{ getDifficultyInfo(work.difficulty).icon }}</span>
+            <span>{{ getDifficultyInfo(work.difficulty).name }}</span>
+            <span class="difficulty-desc">{{ getDifficultyInfo(work.difficulty).description }}</span>
+          </span>
         </div>
 
         <div class="stats">
@@ -215,7 +224,7 @@ import { useRoute } from 'vue-router'
 import { getWorkDetail, toggleFavorite } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast, showImagePreview } from 'vant'
-import { getStepTypeInfo, getCraftInfoByName, getCraftClass, getStepClass } from '@/utils/craftConfig'
+import { getStepTypeInfo, getCraftInfoByName, getCraftClass, getStepClass, getDifficultyInfo } from '@/utils/craftConfig'
 import CraftStepReader from '@/components/CraftStepReader.vue'
 import MaterialSummary from '@/components/MaterialSummary.vue'
 
@@ -872,5 +881,44 @@ onMounted(() => loadWorkDetail())
 
 .craft-icon {
   font-size: 14px;
+}
+
+.difficulty-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.difficulty-icon {
+  font-size: 14px;
+}
+
+.difficulty-desc {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-left: 2px;
+  font-weight: 400;
+}
+
+.difficulty-tag--beginner {
+  background: #f6ffed;
+  color: #389e0d;
+  border: 1px solid #b7eb8f;
+}
+
+.difficulty-tag--intermediate {
+  background: #fff7e6;
+  color: #d46b08;
+  border: 1px solid #ffd591;
+}
+
+.difficulty-tag--advanced {
+  background: #fff1f0;
+  color: #cf1322;
+  border: 1px solid #ffa39e;
 }
 </style>

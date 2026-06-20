@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,6 +96,51 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
     private static final String[] CRAFT_NAMES = {
         "封边", "打孔", "缝线", "上色", "皮雕", "塑形", "五金安装", "裁切", "编织", "削薄"
+    };
+
+    private static final Set<String> HARDWARE_KEYWORDS = new HashSet<>(Arrays.asList(
+        "四合扣", "按扣", "暗扣", "摁扣",
+        "气眼", "鸡眼", "铆钉", "撞钉",
+        "拉链", "拉锁",
+        "磁扣", "吸扣", "磁铁扣",
+        "锁扣", "锁",
+        "D扣", "D型扣", "D形环",
+        "日字扣", "日扣", "调节扣",
+        "方扣", "口字扣",
+        "龙虾扣", "龙虾钩",
+        "钩扣", "挂钩",
+        "弹簧扣", "弹簧圈",
+        "皮带扣", "针扣", "板扣",
+        "五金", "金属扣"
+    ));
+
+    private static final String[][] LEATHER_TYPE_GROUPS = {
+        {"植鞣革", "植鞣"},
+        {"铬鞣革", "铬鞣"},
+        {"半植鞣"},
+        {"疯马皮", "疯马"},
+        {"油蜡皮", "油皮", "蜡皮"},
+        {"磨砂皮", "反绒皮", "反绒"},
+        {"纳帕皮", "纳帕"},
+        {"粒面皮"},
+        {"修面皮"},
+        {"荔枝纹", "摔纹皮", "压花皮"},
+        {"鳄鱼纹", "鸵鸟纹", "蛇纹"},
+        {"羊皮", "山羊皮", "绵羊皮"},
+        {"牛皮", "黄牛皮", "水牛皮"},
+        {"马皮"},
+        {"猪皮"},
+        {"鹿皮"},
+        {"鸵鸟皮"},
+        {"鳄鱼皮"},
+        {"蜥蜴皮"},
+        {"蟒蛇皮", "蛇皮"},
+        {"鲨鱼皮"},
+        {"头层皮"},
+        {"二层皮"},
+        {"三层皮"},
+        {"再生皮", "复合皮"},
+        {"人造革", "PU", "PVC"}
     };
 
     @Override
@@ -790,6 +836,12 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         List<String> commonMaterials = extractCommonMaterials(userId);
         profile.setCommonMaterials(commonMaterials);
 
+        List<CraftProfileDTO.MaterialStat> leatherTypeStats = extractLeatherTypeStats(userId);
+        profile.setLeatherTypeStats(leatherTypeStats);
+
+        List<CraftProfileDTO.MaterialStat> hardwareStats = extractHardwareStats(userId);
+        profile.setHardwareStats(hardwareStats);
+
         List<Map<String, Object>> allCatRows = baseMapper.selectAllCategoryStats(userId);
         List<CraftProfileDTO.CategoryStat> categoryStats = new ArrayList<>();
         for (Map<String, Object> row : allCatRows) {
@@ -867,6 +919,119 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
             String name = item.path("name").asText("");
             if (!name.isEmpty() && name.length() <= 20) {
                 materialCount.merge(name, 1, Integer::sum);
+            }
+        }
+    }
+
+    private List<CraftProfileDTO.MaterialStat> extractLeatherTypeStats(Long userId) {
+        List<Map<String, Object>> materialRows = baseMapper.selectMaterialsForProfile(userId);
+        Map<String, Integer> leatherCount = new LinkedHashMap<>();
+
+        for (Map<String, Object> row : materialRows) {
+            String materialSummary = (String) row.get("material_summary");
+            String materials = (String) row.get("materials");
+            Set<String> foundInWork = new HashSet<>();
+
+            if (materialSummary != null && !materialSummary.trim().isEmpty()) {
+                try {
+                    JsonNode root = objectMapper.readTree(materialSummary);
+                    collectLeatherTypes(root.path("mainMaterials"), foundInWork);
+                } catch (Exception ignored) {}
+            }
+
+            if (materials != null && !materials.trim().isEmpty()) {
+                detectLeatherFromText(materials, foundInWork);
+            }
+
+            for (String leather : foundInWork) {
+                leatherCount.merge(leather, 1, Integer::sum);
+            }
+        }
+
+        return leatherCount.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(8)
+                .map(e -> new CraftProfileDTO.MaterialStat(e.getKey(), e.getValue(), "leather"))
+                .toList();
+    }
+
+    private void collectLeatherTypes(JsonNode items, Set<String> found) {
+        if (items == null || !items.isArray()) {
+            return;
+        }
+        for (JsonNode item : items) {
+            String name = item.path("name").asText("");
+            String spec = item.path("spec").asText("");
+            String fullText = name + " " + spec;
+            detectLeatherFromText(fullText, found);
+        }
+    }
+
+    private void detectLeatherFromText(String text, Set<String> found) {
+        if (text == null || text.isEmpty()) return;
+        String lower = text.toLowerCase();
+        for (String[] group : LEATHER_TYPE_GROUPS) {
+            String primaryName = group[0];
+            for (String alias : group) {
+                if (lower.contains(alias.toLowerCase())) {
+                    found.add(primaryName);
+                    break;
+                }
+            }
+        }
+    }
+
+    private List<CraftProfileDTO.MaterialStat> extractHardwareStats(Long userId) {
+        List<Map<String, Object>> materialRows = baseMapper.selectMaterialsForProfile(userId);
+        Map<String, Integer> hardwareCount = new LinkedHashMap<>();
+
+        for (Map<String, Object> row : materialRows) {
+            String materialSummary = (String) row.get("material_summary");
+            String materials = (String) row.get("materials");
+            Set<String> foundInWork = new HashSet<>();
+
+            if (materialSummary != null && !materialSummary.trim().isEmpty()) {
+                try {
+                    JsonNode root = objectMapper.readTree(materialSummary);
+                    collectHardwareTypes(root.path("auxMaterials"), foundInWork);
+                    collectHardwareTypes(root.path("mainMaterials"), foundInWork);
+                } catch (Exception ignored) {}
+            }
+
+            if (materials != null && !materials.trim().isEmpty()) {
+                detectHardwareFromText(materials, foundInWork);
+            }
+
+            for (String hardware : foundInWork) {
+                hardwareCount.merge(hardware, 1, Integer::sum);
+            }
+        }
+
+        return hardwareCount.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(8)
+                .map(e -> new CraftProfileDTO.MaterialStat(e.getKey(), e.getValue(), "hardware"))
+                .toList();
+    }
+
+    private void collectHardwareTypes(JsonNode items, Set<String> found) {
+        if (items == null || !items.isArray()) {
+            return;
+        }
+        for (JsonNode item : items) {
+            String name = item.path("name").asText("");
+            String spec = item.path("spec").asText("");
+            String fullText = name + " " + spec;
+            detectHardwareFromText(fullText, found);
+        }
+    }
+
+    private void detectHardwareFromText(String text, Set<String> found) {
+        if (text == null || text.isEmpty()) return;
+        String lower = text.toLowerCase();
+        for (String keyword : HARDWARE_KEYWORDS) {
+            if (lower.contains(keyword.toLowerCase())) {
+                found.add(keyword);
             }
         }
     }

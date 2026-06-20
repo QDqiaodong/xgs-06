@@ -14,6 +14,9 @@ public class CraftProfileDTO {
     private List<CategoryStat> craftTypeStats;
     private List<WorkStatusStat> workStatusStats;
 
+    private List<MaterialStat> leatherTypeStats;
+    private List<MaterialStat> hardwareStats;
+
     public List<CategoryStat> getTopCategories() {
         return topCategories;
     }
@@ -76,6 +79,22 @@ public class CraftProfileDTO {
 
     public void setWorkStatusStats(List<WorkStatusStat> workStatusStats) {
         this.workStatusStats = workStatusStats;
+    }
+
+    public List<MaterialStat> getLeatherTypeStats() {
+        return leatherTypeStats;
+    }
+
+    public void setLeatherTypeStats(List<MaterialStat> leatherTypeStats) {
+        this.leatherTypeStats = leatherTypeStats;
+    }
+
+    public List<MaterialStat> getHardwareStats() {
+        return hardwareStats;
+    }
+
+    public void setHardwareStats(List<MaterialStat> hardwareStats) {
+        this.hardwareStats = hardwareStats;
     }
 
     public static class CategoryStat {
@@ -151,6 +170,49 @@ public class CraftProfileDTO {
 
         public void setCount(Integer count) {
             this.count = count;
+        }
+    }
+
+    public static class MaterialStat {
+        private String name;
+        private Integer count;
+        private String category;
+
+        public MaterialStat() {}
+
+        public MaterialStat(String name, Integer count) {
+            this.name = name;
+            this.count = count;
+        }
+
+        public MaterialStat(String name, Integer count, String category) {
+            this.name = name;
+            this.count = count;
+            this.category = category;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Integer getCount() {
+            return count;
+        }
+
+        public void setCount(Integer count) {
+            this.count = count;
+        }
+
+        public String getCategory() {
+            return category;
+        }
+
+        public void setCategory(String category) {
+            this.category = category;
         }
     }
 }

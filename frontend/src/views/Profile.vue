@@ -80,6 +80,14 @@
             <van-icon name="wap-nav" size="14" />
             <span>按工艺</span>
           </div>
+          <div
+            class="stats-tab"
+            :class="{ active: activeStatTab === 'material' }"
+            @click="activeStatTab = 'material'"
+          >
+            <van-icon name="gem-o" size="14" />
+            <span>材料画像</span>
+          </div>
         </div>
 
         <div class="stats-panel">
@@ -167,6 +175,71 @@
               <span>暂无工艺分布数据</span>
             </div>
           </div>
+
+          <div v-show="activeStatTab === 'material'" class="material-panel">
+            <div class="material-subsection" v-if="hasLeatherStats">
+              <div class="subsection-header">
+                <span class="subsection-icon">🐂</span>
+                <span class="subsection-title">皮种偏好</span>
+                <span class="subsection-count">{{ displayLeatherStats.length }} 种</span>
+              </div>
+              <div class="material-list">
+                <div
+                  v-for="item in displayLeatherStats"
+                  :key="'leather-' + item.name"
+                  class="material-bar-item"
+                >
+                  <div class="bar-label-row">
+                    <span class="bar-label leather-bar-label">
+                      <span class="bar-dot leather-dot"></span>
+                      {{ item.name }}
+                    </span>
+                    <span class="bar-count">{{ item.count }}件</span>
+                  </div>
+                  <div class="bar-track">
+                    <div
+                      class="bar-fill bar-fill--leather"
+                      :style="{ width: getMaterialBarPercent(item.count, 'leather') + '%' }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="material-subsection" v-if="hasHardwareStats">
+              <div class="subsection-header">
+                <span class="subsection-icon">🔩</span>
+                <span class="subsection-title">五金偏好</span>
+                <span class="subsection-count">{{ displayHardwareStats.length }} 种</span>
+              </div>
+              <div class="material-list">
+                <div
+                  v-for="item in displayHardwareStats"
+                  :key="'hardware-' + item.name"
+                  class="material-bar-item"
+                >
+                  <div class="bar-label-row">
+                    <span class="bar-label hardware-bar-label">
+                      <span class="bar-dot hardware-dot"></span>
+                      {{ item.name }}
+                    </span>
+                    <span class="bar-count">{{ item.count }}件</span>
+                  </div>
+                  <div class="bar-track">
+                    <div
+                      class="bar-fill bar-fill--hardware"
+                      :style="{ width: getMaterialBarPercent(item.count, 'hardware') + '%' }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="!hasLeatherStats && !hasHardwareStats" class="stats-empty">
+              <van-icon name="records" size="28" color="#ddd" />
+              <span>暂无材料画像数据</span>
+            </div>
+          </div>
         </div>
 
         <div class="craft-card-section" v-if="craftProfile.commonMaterials && craftProfile.commonMaterials.length">
@@ -239,6 +312,8 @@ const isEmptyProfile = computed(() => {
     (!p.craftTypeStats || p.craftTypeStats.length === 0) &&
     (!p.workStatusStats || p.workStatusStats.length === 0) &&
     (!p.commonMaterials || p.commonMaterials.length === 0) &&
+    (!p.leatherTypeStats || p.leatherTypeStats.length === 0) &&
+    (!p.hardwareStats || p.hardwareStats.length === 0) &&
     (!p.totalWorks || p.totalWorks === 0)
   )
 })
@@ -292,6 +367,40 @@ const displayCraftStats = computed(() => {
   if (!craftProfile.value?.craftTypeStats) return []
   return [...craftProfile.value.craftTypeStats].sort((a, b) => b.count - a.count)
 })
+
+const hasLeatherStats = computed(() => {
+  return craftProfile.value?.leatherTypeStats?.length > 0
+})
+
+const hasHardwareStats = computed(() => {
+  return craftProfile.value?.hardwareStats?.length > 0
+})
+
+const displayLeatherStats = computed(() => {
+  if (!craftProfile.value?.leatherTypeStats) return []
+  return [...craftProfile.value.leatherTypeStats].sort((a, b) => b.count - a.count)
+})
+
+const displayHardwareStats = computed(() => {
+  if (!craftProfile.value?.hardwareStats) return []
+  return [...craftProfile.value.hardwareStats].sort((a, b) => b.count - a.count)
+})
+
+const maxLeatherCount = computed(() => {
+  if (!displayLeatherStats.value.length) return 0
+  return Math.max(...displayLeatherStats.value.map(s => s.count))
+})
+
+const maxHardwareCount = computed(() => {
+  if (!displayHardwareStats.value.length) return 0
+  return Math.max(...displayHardwareStats.value.map(s => s.count))
+})
+
+const getMaterialBarPercent = (count, type) => {
+  const max = type === 'leather' ? maxLeatherCount.value : maxHardwareCount.value
+  if (!max) return 0
+  return Math.max(5, (count / max) * 100)
+}
 
 const getBarPercent = (count) => {
   if (!maxStatCount.value) return 0
@@ -584,6 +693,84 @@ watch(() => userStore.userInfo?.id, () => {
 
 .craft-bar-icon {
   font-size: 13px;
+}
+
+.material-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.material-subsection {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.subsection-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(192, 132, 87, 0.2);
+}
+
+.subsection-icon {
+  font-size: 16px;
+}
+
+.subsection-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b4c2a;
+  flex: 1;
+}
+
+.subsection-count {
+  font-size: 11px;
+  color: #b08d6a;
+  background: rgba(192, 132, 87, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.material-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.material-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.leather-bar-label {
+  color: #8b5a2b;
+  font-size: 12px;
+}
+
+.hardware-bar-label {
+  color: #5c5c5c;
+  font-size: 12px;
+}
+
+.leather-dot {
+  background: #c08457;
+}
+
+.hardware-dot {
+  background: #8c8c8c;
+}
+
+.bar-fill--leather {
+  background: linear-gradient(90deg, #c08457, #d4a373);
+}
+
+.bar-fill--hardware {
+  background: linear-gradient(90deg, #8c8c8c, #a6a6a6);
 }
 
 .craft-card-section {

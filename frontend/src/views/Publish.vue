@@ -86,6 +86,51 @@
               placeholder="请选择作品状态（默认：正式成品）"
               @click="openWorkStatusPicker"
             />
+            <div class="completion-field-wrapper">
+              <van-cell-group inset class="completion-cell-group">
+                <div class="completion-field-row" @click="openCompletionPicker">
+                  <div class="completion-field-label">工艺完成度</div>
+                  <div class="completion-field-value">
+                    <span v-if="completionLevelInfo" class="completion-brief">
+                      <span class="completion-icon">{{ completionLevelInfo.icon }}</span>
+                      <span class="completion-name">{{ completionLevelInfo.name }}</span>
+                      <span class="completion-percent">{{ completionLevelInfo.percent }}%</span>
+                    </span>
+                    <span v-else class="completion-placeholder">请选择完成度</span>
+                    <van-icon name="arrow" class="completion-arrow" />
+                  </div>
+                </div>
+                <div class="completion-mini-scale">
+                  <div
+                    v-for="tick in COMPLETION_ORDER"
+                    :key="tick"
+                    class="mini-tick"
+                    :class="{
+                      active: tick <= form.completionLevel,
+                      current: tick === form.completionLevel
+                    }"
+                    :style="getMiniTickStyle(tick)"
+                  ></div>
+                  <div class="mini-fill" :style="{ width: getCompletionFillWidth() }"></div>
+                </div>
+                <div v-if="completionHint" class="completion-field-hint" :class="'hint--' + completionHint.level">
+                  <van-icon :name="completionHint.icon" />
+                  <span>{{ completionHint.text }}</span>
+                </div>
+              </van-cell-group>
+            </div>
+            <van-cell-group inset v-if="form.completionLevel" class="completion-note-group">
+              <van-field
+                v-model="form.completionNote"
+                label="完成度说明"
+                type="textarea"
+                placeholder="简要描述当前工艺阶段状态，如：封边已完成粗磨，待细磨抛光..."
+                rows="2"
+                maxlength="500"
+                show-word-limit
+                autosize
+              />
+            </van-cell-group>
           </van-cell-group>
         </div>
 
@@ -415,16 +460,27 @@
           <div class="option-title">选择工艺类型</div>
           <button type="button" class="option-action confirm" @click="confirmCraftSelection">确认</button>
         </div>
-        <div class="option-list">
+        <div v-if="form.categoryId" class="craft-filter-hint">
+          <van-icon name="info-o" />
+          <span>已根据所选品类优化工艺选项，灰色项为不推荐搭配</span>
+        </div>
+        <div class="option-list craft-option-list">
           <button
             v-for="option in craftTypes"
             :key="option.value"
             type="button"
-            class="option-item"
-            :class="{ active: craftPickerValue[0] === option.value }"
-            @click="selectCraftOption(option)"
+            class="option-item craft-option"
+            :class="{
+              active: craftPickerValue[0] === option.value,
+              disabled: option.enabled === 0,
+              'craft-disabled': option.enabled === 0
+            }"
+            @click="selectCraftOptionSafe(option)"
           >
-            {{ option.text }}
+            <span class="craft-option-text">{{ option.text }}</span>
+            <span v-if="option.enabled === 0" class="craft-badge craft-badge--disabled">不推荐</span>
+            <span v-else-if="option.sort && option.sort <= 5" class="craft-badge craft-badge--common">常见</span>
+            <span v-else class="craft-badge craft-badge--optional">可选</span>
           </button>
         </div>
       </div>
@@ -563,16 +619,56 @@
         </div>
       </div>
     </van-popup>
+
+    <van-popup v-model:show="showCompletionPicker" position="bottom" round>
+      <div class="option-panel completion-panel">
+        <div class="option-toolbar">
+          <button type="button" class="option-action cancel" @click="showCompletionPicker = false">取消</button>
+          <div class="option-title">选择工艺完成度</div>
+          <button type="button" class="option-action confirm" @click="confirmCompletionSelection">确认</button>
+        </div>
+        <div class="completion-option-hint">
+          <van-icon name="info-o" />
+          <span>根据当前工艺进度选择最接近的完成阶段</span>
+        </div>
+        <div class="completion-option-list">
+          <div
+            v-for="level in COMPLETION_ORDER"
+            :key="level"
+            class="completion-option"
+            :class="{
+              active: completionPickerValue[0] === level,
+              suggested: suggestedCompletion?.key === level
+            }"
+            @click="selectCompletionOption(level)"
+          >
+            <div class="co-header">
+              <span class="co-icon">{{ COMPLETION_LEVELS[level].icon }}</span>
+              <span class="co-name">{{ COMPLETION_LEVELS[level].name }}</span>
+              <span class="co-percent">{{ COMPLETION_LEVELS[level].percent }}%</span>
+              <span v-if="suggestedCompletion?.key === level" class="co-suggest-tag">推荐</span>
+            </div>
+            <div class="co-bar">
+              <div class="co-bar-fill" :style="{
+                width: COMPLETION_LEVELS[level].percent + '%',
+                background: `linear-gradient(90deg, ${COMPLETION_LEVELS[level].borderColor}, ${COMPLETION_LEVELS[level].color})`
+              }"></div>
+            </div>
+            <div class="co-detail">{{ COMPLETION_LEVELS[level].description }}</div>
+          </div>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCategories, publishWork } from '@/api'
+import { getCategories, getCraftTypesByCategory, publishWork } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast, showDialog } from 'vant'
-import { CRAFT_STYLES, getStepTypeInfo, DIFFICULTY_LEVELS, DIFFICULTY_ORDER, getSuggestedDifficultyBySteps, getDifficultyInfo, getDifficultyStepRange, WORK_STATUS, WORK_STATUS_ORDER, getWorkStatusInfo } from '@/utils/craftConfig'
+import { CRAFT_STYLES, getStepTypeInfo, DIFFICULTY_LEVELS, DIFFICULTY_ORDER, getSuggestedDifficultyBySteps, getDifficultyInfo, getDifficultyStepRange, WORK_STATUS, WORK_STATUS_ORDER, getWorkStatusInfo, COMPLETION_LEVELS, COMPLETION_ORDER, getCompletionInfo, suggestCompletionByWorkStatus } from '@/utils/craftConfig'
 import {
   validateAllMaterials,
   validateSingleMaterial,
@@ -639,6 +735,8 @@ const form = ref({
   craftTypeId: null,
   difficulty: null,
   workStatus: null,
+  completionLevel: 5,
+  completionNote: '',
   steps: [createEmptyStep()],
   materialSummaryObj: {
     mainMaterials: [],
@@ -663,6 +761,8 @@ const showDifficultyPicker = ref(false)
 const difficultyPickerValue = ref([])
 const showWorkStatusPicker = ref(false)
 const workStatusPickerValue = ref([])
+const showCompletionPicker = ref(false)
+const completionPickerValue = ref([])
 
 const selectedCategoryName = computed(() => {
   if (!form.value.categoryId) return ''
@@ -686,6 +786,54 @@ const selectedWorkStatusText = computed(() => {
   if (!form.value.workStatus) return ''
   const info = getWorkStatusInfo(form.value.workStatus)
   return info ? `${info.icon} ${info.name}` : ''
+})
+
+const completionLevelInfo = computed(() => getCompletionInfo(form.value.completionLevel))
+
+const suggestedCompletion = computed(() => {
+  if (!form.value.workStatus) return null
+  return suggestCompletionByWorkStatus(form.value.workStatus)
+})
+
+const completionHint = computed(() => {
+  const info = completionLevelInfo.value
+  if (!info) return null
+  const level = form.value.completionLevel
+  const status = form.value.workStatus
+
+  if (status === 'finished' && level < 4) {
+    return {
+      level: 'warn',
+      icon: 'warning-o',
+      text: `标记为【正式成品】建议完成度在精修(4级)以上，当前为【${info.icon} ${info.name}】`
+    }
+  }
+  if (status === 'semi_finished' && level >= 5) {
+    return {
+      level: 'warn',
+      icon: 'warning-o',
+      text: `标记为【半成品】完成度不应达到完工(5级)，请调整完成度或作品状态`
+    }
+  }
+  if (suggestedCompletion.value && suggestedCompletion.value.key !== level) {
+    return {
+      level: 'suggest',
+      icon: 'bulb-o',
+      text: `根据作品状态【${getWorkStatusInfo(status)?.name || ''}】，推荐完成度为【${suggestedCompletion.value.icon} ${suggestedCompletion.value.name}】`
+    }
+  }
+  return {
+    level: 'ok',
+    icon: 'passed',
+    text: `完成度【${info.icon} ${info.name}】与作品状态匹配`
+  }
+})
+
+const filteredCraftOptions = computed(() => {
+  if (!form.value.categoryId) {
+    return craftTypes.value
+  }
+  return craftTypes.value
 })
 
 const validStepCount = computed(() => {
@@ -932,8 +1080,36 @@ const confirmCategorySelection = () => {
   if (option) {
     form.value.categoryId = option.value
     categoryPickerValue.value = [option.value]
+    reloadCraftTypesByCategory(option.value)
   }
   showCategoryPicker.value = false
+}
+
+const reloadCraftTypesByCategory = async (categoryId) => {
+  if (!categoryId) return
+  try {
+    const filteredCrafts = await getCraftTypesByCategory(categoryId)
+    if (filteredCrafts && filteredCrafts.length) {
+      const allCrafts = craftTypes.value
+      craftTypes.value = filteredCrafts.map(fc => {
+        const orig = allCrafts.find(c => c.value === fc.id)
+        return {
+          text: orig?.text || fc.name,
+          value: fc.id,
+          enabled: fc.enabled !== undefined ? fc.enabled : 1,
+          sort: fc.sort || 0
+        }
+      })
+      if (form.value.craftTypeId) {
+        const stillValid = craftTypes.value.find(c => c.value === form.value.craftTypeId && c.enabled !== 0)
+        if (!stillValid) {
+          form.value.craftTypeId = null
+          craftPickerValue.value = []
+        }
+      }
+    }
+  } catch (e) {
+  }
 }
 
 const openCraftPicker = () => {
@@ -946,6 +1122,14 @@ const openCraftPicker = () => {
 }
 
 const selectCraftOption = (option) => {
+  craftPickerValue.value = [option.value]
+}
+
+const selectCraftOptionSafe = (option) => {
+  if (option.enabled === 0) {
+    showToast(`【${option.text}】与当前品类搭配不太合理，建议选择更匹配的工艺类型`)
+    return
+  }
   craftPickerValue.value = [option.value]
 }
 
@@ -1018,8 +1202,54 @@ const confirmWorkStatusSelection = () => {
   const key = workStatusPickerValue.value[0]
   if (key) {
     form.value.workStatus = key
+    if (suggestedCompletion.value && !form.value.completionLevel) {
+      form.value.completionLevel = suggestedCompletion.value.key
+    }
   }
   showWorkStatusPicker.value = false
+}
+
+const openCompletionPicker = () => {
+  if (form.value.completionLevel) {
+    completionPickerValue.value = [form.value.completionLevel]
+  } else if (suggestedCompletion.value) {
+    completionPickerValue.value = [suggestedCompletion.value.key]
+  } else if (!completionPickerValue.value.length && COMPLETION_ORDER.length) {
+    completionPickerValue.value = [5]
+  }
+  showCompletionPicker.value = true
+}
+
+const selectCompletionOption = (level) => {
+  completionPickerValue.value = [level]
+}
+
+const confirmCompletionSelection = () => {
+  const level = completionPickerValue.value[0]
+  if (level) {
+    form.value.completionLevel = level
+  }
+  showCompletionPicker.value = false
+}
+
+const getMiniTickStyle = (tick) => {
+  const info = COMPLETION_LEVELS[tick]
+  const isActive = tick <= form.value.completionLevel
+  const isCurrent = tick === form.value.completionLevel
+  const style = {
+    background: isActive ? info.color : '#e0e0e0',
+    borderColor: isActive ? info.borderColor : '#e0e0e0'
+  }
+  if (isCurrent) {
+    style.transform = 'scale(1.3)'
+    style.boxShadow = `0 0 0 2px ${info.borderColor}55`
+  }
+  return style
+}
+
+const getCompletionFillWidth = () => {
+  const percent = completionLevelInfo.value?.percent || 0
+  return `${percent}%`
 }
 
 const afterRead = (file) => {
@@ -1110,7 +1340,9 @@ const submit = async () => {
       steps: steps.length ? steps : undefined,
       materialSummary: hasMaterialSummary ? JSON.stringify(materialSummaryData) : undefined,
       difficulty: form.value.difficulty || undefined,
-      workStatus: form.value.workStatus || 'finished'
+      workStatus: form.value.workStatus || 'finished',
+      completionLevel: form.value.completionLevel || 5,
+      completionNote: form.value.completionNote?.trim() || undefined
     })
 
     showToast('发布成功')
@@ -1747,5 +1979,333 @@ onMounted(async () => {
   font-size: 13px;
   color: #666;
   margin-bottom: 4px;
+}
+
+.craft-filter-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #f0f9ff;
+  color: #0050b3;
+  font-size: 12px;
+  border-bottom: 1px solid #bae7ff;
+}
+
+.craft-option-list {
+  padding-top: 4px !important;
+}
+
+.craft-option {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 14px !important;
+  min-height: 48px !important;
+}
+
+.craft-option-text {
+  flex: 1;
+  text-align: left;
+}
+
+.craft-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.craft-badge--common {
+  background: #e6ff7e33;
+  color: #749b00;
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.craft-badge--optional {
+  background: #e6f7ff;
+  color: #0050b3;
+  border: 1px solid #91d5ff;
+}
+
+.craft-badge--disabled {
+  background: #f5f5f5;
+  color: #8c8c8c;
+  border: 1px solid #d9d9d9;
+}
+
+.craft-option.craft-disabled {
+  opacity: 0.55;
+  background: #fafafa !important;
+  color: #bfbfbf !important;
+}
+
+.craft-option.craft-disabled.active {
+  border: 1px dashed #ffa39e !important;
+  background: #fff1f0 !important;
+}
+
+.completion-field-wrapper {
+  padding: 0 16px;
+  margin-bottom: 12px;
+}
+
+.completion-cell-group {
+  border-radius: 12px !important;
+  overflow: hidden;
+  padding: 12px 16px !important;
+  border: 1px solid #f5e6d3;
+}
+
+.completion-field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  cursor: pointer;
+  border-bottom: 1px dashed #f0e6d8;
+}
+
+.completion-field-label {
+  font-size: 14px;
+  color: #323233;
+  font-weight: 500;
+}
+
+.completion-field-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.completion-brief {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #fef7ed 0%, #fff5e6 100%);
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 1px solid #ffd591;
+}
+
+.completion-icon {
+  font-size: 13px;
+}
+
+.completion-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8b5a2b;
+}
+
+.completion-percent {
+  font-size: 12px;
+  color: #fa8c16;
+  font-weight: 600;
+}
+
+.completion-placeholder {
+  font-size: 14px;
+  color: #c8c9cc;
+}
+
+.completion-arrow {
+  color: #c8c9cc;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.completion-mini-scale {
+  position: relative;
+  margin-top: 14px;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: visible;
+}
+
+.completion-mini-scale .mini-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #95de64, #237804);
+  transition: width 0.4s ease;
+  z-index: 0;
+}
+
+.completion-mini-scale .mini-tick {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: #fff;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.completion-mini-scale .mini-tick:nth-child(1) { left: 2%; }
+.completion-mini-scale .mini-tick:nth-child(2) { left: 26%; }
+.completion-mini-scale .mini-tick:nth-child(3) { left: 50%; }
+.completion-mini-scale .mini-tick:nth-child(4) { left: 74%; }
+.completion-mini-scale .mini-tick:nth-child(5) { left: 96%; transform: translateY(-50%); }
+
+.completion-note-group {
+  margin-bottom: 12px;
+}
+
+.completion-field-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 12px;
+  margin-top: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.completion-field-hint .van-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.completion-field-hint.hint--info {
+  background: #e6f7ff;
+  color: #0050b3;
+  border: 1px solid #91d5ff;
+}
+
+.completion-field-hint.hint--suggest {
+  background: #f6ffed;
+  color: #389e0d;
+  border: 1px solid #b7eb8f;
+}
+
+.completion-field-hint.hint--warn {
+  background: #fff7e6;
+  color: #d46b08;
+  border: 1px solid #ffd591;
+}
+
+.completion-field-hint.hint--ok {
+  background: #e6fffb;
+  color: #08979c;
+  border: 1px solid #87e8de;
+}
+
+.completion-panel {
+  max-height: 80vh !important;
+}
+
+.completion-option-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #f6ffed;
+  color: #389e0d;
+  font-size: 12px;
+  border-bottom: 1px solid #b7eb8f;
+}
+
+.completion-option-list {
+  overflow-y: auto;
+  padding: 8px 16px 18px;
+}
+
+.completion-option {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  border: 2px solid #f0f0f0;
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.completion-option:last-child {
+  margin-bottom: 0;
+}
+
+.completion-option.active {
+  border-color: #c08457;
+  background: #fdf7f0;
+  box-shadow: 0 2px 8px rgba(192, 132, 87, 0.15);
+}
+
+.completion-option.suggested {
+  border-color: #95de64;
+  background: #fcffe6;
+}
+
+.completion-option.active.suggested {
+  border-color: #c08457;
+  background: #fdf7f0;
+}
+
+.co-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.co-icon {
+  font-size: 20px;
+}
+
+.co-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.co-percent {
+  font-size: 14px;
+  font-weight: 700;
+  color: #8b5a2b;
+  background: linear-gradient(135deg, #fef7ed 0%, #fff5e6 100%);
+  padding: 2px 10px;
+  border-radius: 10px;
+  border: 1px solid #ffd591;
+}
+
+.co-suggest-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #52c41a;
+  color: #fff;
+  font-weight: 500;
+}
+
+.co-bar {
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.co-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.co-detail {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.6;
 }
 </style>

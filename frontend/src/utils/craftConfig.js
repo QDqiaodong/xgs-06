@@ -163,3 +163,145 @@ export const getWorkStatusName = (key) => {
   const info = getWorkStatusInfo(key)
   return info ? info.name : ''
 }
+
+export const COMPLETION_LEVELS = {
+  1: {
+    key: 1,
+    name: '粗坯',
+    shortName: '粗坯',
+    percent: 20,
+    icon: '🪵',
+    tagType: 'default',
+    color: '#8c8c8c',
+    bgColor: '#fafafa',
+    borderColor: '#d9d9d9',
+    description: '已完成皮料裁切与基础下料，尚未进行结构组装',
+    hint: '适合记录制作初始阶段的裁切、粗加工状态'
+  },
+  2: {
+    key: 2,
+    name: '雏形',
+    shortName: '雏形',
+    percent: 40,
+    icon: '📐',
+    tagType: 'info',
+    color: '#1890ff',
+    bgColor: '#e6f7ff',
+    borderColor: '#91d5ff',
+    description: '主要部件已粗缝或粘合，作品整体轮廓已呈现',
+    hint: '适合记录作品初成型、部件定位组合的阶段'
+  },
+  3: {
+    key: 3,
+    name: '半成',
+    shortName: '半成',
+    percent: 60,
+    icon: '🧵',
+    tagType: 'warning',
+    color: '#fa8c16',
+    bgColor: '#fff7e6',
+    borderColor: '#ffd591',
+    description: '主体缝制完成，结构已固定，待精细处理',
+    hint: '适合记录主体完工、等待封边精修阶段的半成品'
+  },
+  4: {
+    key: 4,
+    name: '精修',
+    shortName: '精修',
+    percent: 80,
+    icon: '✨',
+    tagType: 'success',
+    color: '#52c41a',
+    bgColor: '#f6ffed',
+    borderColor: '#b7eb8f',
+    description: '封边、打磨、五金等关键工序完成，处于最终打磨优化阶段',
+    hint: '适合记录作品即将完成、做最终收尾和修饰的阶段'
+  },
+  5: {
+    key: 5,
+    name: '完工',
+    shortName: '完工',
+    percent: 100,
+    icon: '🏆',
+    tagType: 'success',
+    color: '#237804',
+    bgColor: '#d9f7be',
+    borderColor: '#73d13d',
+    description: '所有工序全部完成，作品达到预期成品效果可交付使用',
+    hint: '适合记录达到镜面封边、线迹工整、细节完美的最终成品'
+  }
+}
+
+export const COMPLETION_ORDER = [1, 2, 3, 4, 5]
+
+export const getCompletionInfo = (level) => {
+  if (!level) return null
+  const l = typeof level === 'string' ? parseInt(level, 10) : level
+  return COMPLETION_LEVELS[l] || null
+}
+
+export const getCompletionName = (level) => {
+  const info = getCompletionInfo(level)
+  return info ? info.name : ''
+}
+
+export const getCompletionPercent = (level) => {
+  const info = getCompletionInfo(level)
+  return info ? info.percent : 0
+}
+
+export const getCompletionClass = (level) => {
+  const info = getCompletionInfo(level)
+  return info ? `completion-badge--L${info.key}` : ''
+}
+
+export const suggestCompletionByWorkStatus = (workStatusKey) => {
+  const mapping = {
+    finished: 5,
+    repair: 5,
+    practice: 4,
+    semi_finished: 3
+  }
+  const level = mapping[workStatusKey]
+  return level ? getCompletionInfo(level) : null
+}
+
+export const CATEGORY_CRAFT_HINTS = {
+  passport_holder: {
+    name: '护照夹',
+    commonCrafts: ['sewing', 'edge', 'cutting', 'hardware'],
+    excludedCrafts: ['carving', 'weaving'],
+    hint: '护照夹结构紧凑、面积有限，常见缝制与封边工艺，不适合大面积皮雕或编织'
+  },
+  wallet: {
+    name: '钱包/短夹',
+    commonCrafts: ['sewing', 'edge', 'cutting', 'hardware', 'shaping'],
+    optionalCrafts: ['carving', 'weaving'],
+    hint: '钱包有足够平面可做皮雕装饰，小面积编织点缀也可行'
+  },
+  card_holder: {
+    name: '卡包',
+    commonCrafts: ['sewing', 'edge', 'cutting', 'hardware'],
+    excludedCrafts: ['carving'],
+    hint: '卡包空间紧凑、皮面有限，皮雕施展不开，建议聚焦基础缝制与封边'
+  },
+  belt: {
+    name: '皮带',
+    commonCrafts: ['cutting', 'edge', 'hardware'],
+    excludedCrafts: ['carving', 'weaving'],
+    hint: '皮带主要是直线条造型，重点在封边工艺，不适合皮雕或编织'
+  },
+  notebook: {
+    name: '笔记本封皮',
+    commonCrafts: ['cutting', 'edge', 'shaping', 'carving'],
+    optionalCrafts: ['sewing', 'hardware'],
+    excludedCrafts: ['weaving'],
+    hint: '笔记本封皮是皮雕工艺的经典适用品类，平面充足且装饰性强'
+  },
+  bags: {
+    name: '包袋类（手拿/单肩/托特）',
+    commonCrafts: ['sewing', 'edge', 'cutting', 'hardware', 'shaping'],
+    optionalCrafts: ['carving', 'weaving'],
+    hint: '包袋类结构丰富、皮面充足，可自由搭配皮雕、编织等装饰工艺'
+  }
+}

@@ -15,6 +15,8 @@ public class WorkPublishDTO {
     private Long craftTypeId;
     private String difficulty;
     private String workStatus;
+    private Integer completionLevel;
+    private String completionNote;
     private List<String> images;
     private List<String> processImages;
     private List<String> detailImages;
@@ -114,6 +116,22 @@ public class WorkPublishDTO {
 
     public void setWorkStatus(String workStatus) {
         this.workStatus = workStatus;
+    }
+
+    public Integer getCompletionLevel() {
+        return completionLevel;
+    }
+
+    public void setCompletionLevel(Integer completionLevel) {
+        this.completionLevel = completionLevel;
+    }
+
+    public String getCompletionNote() {
+        return completionNote;
+    }
+
+    public void setCompletionNote(String completionNote) {
+        this.completionNote = completionNote;
     }
 
     public List<String> getImages() {

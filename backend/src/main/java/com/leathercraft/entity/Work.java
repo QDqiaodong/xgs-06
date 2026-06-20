@@ -38,6 +38,10 @@ public class Work {
 
     private String workStatus;
 
+    private Integer completionLevel;
+
+    private String completionNote;
+
     private Integer viewCount;
 
     private Integer favoriteCount;
@@ -183,6 +187,22 @@ public class Work {
 
     public void setWorkStatus(String workStatus) {
         this.workStatus = workStatus;
+    }
+
+    public Integer getCompletionLevel() {
+        return completionLevel;
+    }
+
+    public void setCompletionLevel(Integer completionLevel) {
+        this.completionLevel = completionLevel;
+    }
+
+    public String getCompletionNote() {
+        return completionNote;
+    }
+
+    public void setCompletionNote(String completionNote) {
+        this.completionNote = completionNote;
     }
 
     public Integer getViewCount() {

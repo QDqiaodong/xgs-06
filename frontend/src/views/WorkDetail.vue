@@ -188,6 +188,35 @@
           </span>
         </div>
 
+        <div class="completion-card" v-if="completionInfo">
+          <div class="completion-card-header">
+            <div class="completion-title-row">
+              <van-icon name="flag-o" class="completion-card-icon" />
+              <span class="completion-card-title">工艺完成度</span>
+              <span class="completion-card-badge" :style="{
+                background: completionInfo.bgColor,
+                color: completionInfo.color,
+                borderColor: completionInfo.borderColor
+              }">
+                <span class="ccb-icon">{{ completionInfo.icon }}</span>
+                <span class="ccb-name">{{ completionInfo.name }}</span>
+                <span class="ccb-percent">{{ completionInfo.percent }}%</span>
+              </span>
+            </div>
+            <p class="completion-card-desc">{{ completionInfo.description }}</p>
+          </div>
+          <div class="completion-card-scale">
+            <CompletionScale :level="work.completionLevel" size="medium" :show-label="true" :show-tick-labels="true" />
+          </div>
+          <div class="completion-card-note" v-if="work.completionNote">
+            <div class="note-header">
+              <van-icon name="records-o" />
+              <span>作者说明</span>
+            </div>
+            <p class="note-text">{{ work.completionNote }}</p>
+          </div>
+        </div>
+
         <div class="stats">
           <span><van-icon name="eye-o" /> {{ work.viewCount }} 浏览</span>
           <span><van-icon name="star-o" /> {{ work.favoriteCount }} 收藏</span>
@@ -366,9 +395,10 @@ import { useRoute } from 'vue-router'
 import { getWorkDetail, toggleFavorite, getRetrospective, saveRetrospective, deleteRetrospective } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast, showImagePreview, showConfirmDialog } from 'vant'
-import { getStepTypeInfo, getCraftInfoByName, getCraftClass, getStepClass, getDifficultyInfo, getWorkStatusInfo, getWorkStatusClass } from '@/utils/craftConfig'
+import { getStepTypeInfo, getCraftInfoByName, getCraftClass, getStepClass, getDifficultyInfo, getWorkStatusInfo, getWorkStatusClass, getCompletionInfo } from '@/utils/craftConfig'
 import CraftStepReader from '@/components/CraftStepReader.vue'
 import MaterialSummary from '@/components/MaterialSummary.vue'
+import CompletionScale from '@/components/CompletionScale.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -428,6 +458,11 @@ const processTotalCount = computed(() => {
     return work.value.steps.reduce((sum, step, sIdx) => sum + getValidStepImages(step, sIdx).length, 0)
   }
   return validProcessImages.value.length
+})
+
+const completionInfo = computed(() => {
+  if (!work.value || !work.value.completionLevel) return null
+  return getCompletionInfo(work.value.completionLevel)
 })
 
 const totalTimeCost = computed(() => {
@@ -1387,5 +1422,97 @@ onMounted(() => loadWorkDetail())
 .retro-popup-actions :deep(.van-button--primary) {
   background: linear-gradient(135deg, #2e7d6f, #3a9d8c);
   border: none;
+}
+
+.completion-card {
+  background: linear-gradient(135deg, #fefefe 0%, #fafaf5 100%);
+  border: 1px solid #f0e6d3;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 12px 0;
+}
+
+.completion-card-header {
+  margin-bottom: 10px;
+}
+
+.completion-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.completion-card-icon {
+  font-size: 16px;
+  color: #8b5a2b;
+}
+
+.completion-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.completion-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ccb-icon {
+  font-size: 13px;
+}
+
+.ccb-percent {
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.completion-card-desc {
+  font-size: 12px;
+  color: #888;
+  margin: 0;
+  line-height: 1.6;
+  padding-left: 24px;
+}
+
+.completion-card-scale {
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(240, 230, 211, 0.5);
+}
+
+.completion-card-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #fff9e6;
+  border-radius: 10px;
+  border: 1px dashed #ffe58f;
+}
+
+.note-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ad6800;
+  margin-bottom: 6px;
+}
+
+.note-text {
+  margin: 0;
+  font-size: 13px;
+  color: #614700;
+  line-height: 1.6;
 }
 </style>

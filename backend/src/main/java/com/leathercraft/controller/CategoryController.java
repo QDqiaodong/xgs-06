@@ -2,11 +2,13 @@ package com.leathercraft.controller;
 
 import com.leathercraft.common.Result;
 import com.leathercraft.entity.Category;
+import com.leathercraft.service.CategoryCraftRelationService;
 import com.leathercraft.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/category")
@@ -14,6 +16,9 @@ public class CategoryController {
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private CategoryCraftRelationService categoryCraftRelationService;
 
     @GetMapping("/list")
     public Result<List<Category>> getByType(@RequestParam(required = false) String type,
@@ -24,6 +29,31 @@ public class CategoryController {
     @GetMapping("/{id}")
     public Result<Category> getById(@PathVariable Long id) {
         return Result.success(categoryService.getById(id));
+    }
+
+    @GetMapping("/craft-by-category")
+    public Result<List<Category>> getCraftTypesByCategory(@RequestParam(required = false) Long categoryId) {
+        return Result.success(categoryCraftRelationService.getCraftTypesByCategoryIdEnhanced(categoryId));
+    }
+
+    @GetMapping("/validate-craft")
+    public Result<Map<String, Object>> validateCategoryCraftRelation(
+            @RequestParam Long categoryId,
+            @RequestParam Long craftTypeId) {
+        String errorMsg = categoryCraftRelationService.validateCategoryCraftRelation(categoryId, craftTypeId);
+        boolean excluded = categoryCraftRelationService.isExcludedRelation(categoryId, craftTypeId);
+        if (errorMsg != null) {
+            return Result.success(Map.of(
+                    "valid", false,
+                    "excluded", true,
+                    "message", errorMsg
+            ));
+        }
+        return Result.success(Map.of(
+                "valid", true,
+                "excluded", excluded,
+                "message", ""
+        ));
     }
 
     @PostMapping

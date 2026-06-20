@@ -7,6 +7,9 @@ export const updateUser = (data) => request.put('/user', data)
 export const getCraftProfile = (userId) => request.get(`/user/craft-profile/${userId}`)
 
 export const getCategories = (type) => request.get('/category/list', { params: { type } })
+export const getCategory = (id) => request.get(`/category/${id}`)
+export const getCraftTypesByCategory = (categoryId) => request.get('/category/craft-by-category', { params: { categoryId } })
+export const validateCategoryCraft = (categoryId, craftTypeId) => request.get('/category/validate-craft', { params: { categoryId, craftTypeId } })
 
 export const getWorkPage = (params) => request.get('/work/page', { params })
 export const getWorkDetail = (id, config = {}) => request.get(`/work/${id}`, config)

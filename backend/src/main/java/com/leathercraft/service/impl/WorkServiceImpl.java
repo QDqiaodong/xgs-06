@@ -13,6 +13,7 @@ import com.leathercraft.entity.WorkStep;
 import com.leathercraft.mapper.WorkImageMapper;
 import com.leathercraft.mapper.WorkMapper;
 import com.leathercraft.mapper.WorkStepMapper;
+import com.leathercraft.service.CategoryCraftRelationService;
 import com.leathercraft.service.WorkService;
 import com.leathercraft.validator.MaterialValidator;
 import com.leathercraft.validator.ValidationResult;
@@ -54,6 +55,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     @Autowired
     private MaterialValidator materialValidator;
 
+    @Autowired
+    private CategoryCraftRelationService categoryCraftRelationService;
+
     private static final String HOT_WORKS_KEY = "hot:works";
     private static final String WORK_VIEW_KEY = "work:view:";
     private static final int MATERIAL_BRIEF_MAX_LENGTH = 100;
@@ -66,6 +70,10 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     private static final String WORK_STATUS_FINISHED = "finished";
     private static final String WORK_STATUS_REPAIR = "repair";
     private static final String WORK_STATUS_SEMI_FINISHED = "semi_finished";
+
+    private static final int COMPLETION_LEVEL_MIN = 1;
+    private static final int COMPLETION_LEVEL_MAX = 5;
+    private static final int COMPLETION_NOTE_MAX_LENGTH = 500;
 
     private static final int BEGINNER_MAX_STEPS = 3;
     private static final int INTERMEDIATE_MAX_STEPS = 7;
@@ -343,6 +351,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     @Transactional
     public void publishWork(WorkPublishDTO dto, Long userId) {
         validateMaterials(dto.getMaterialSummary(), dto.getMaterials());
+        validateCategoryCraft(dto.getCategoryId(), dto.getCraftTypeId());
 
         Work work = new Work();
         work.setUserId(userId);
@@ -357,6 +366,8 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setCraftTypeId(dto.getCraftTypeId());
         work.setDifficulty(validateAndNormalizeDifficulty(dto.getDifficulty(), dto.getSteps()));
         work.setWorkStatus(validateAndNormalizeWorkStatus(dto.getWorkStatus()));
+        work.setCompletionLevel(validateAndNormalizeCompletionLevel(dto.getCompletionLevel(), dto.getWorkStatus()));
+        work.setCompletionNote(normalizeCompletionNote(dto.getCompletionNote()));
         work.setViewCount(0);
         work.setFavoriteCount(0);
         work.setStatus(1);
@@ -374,6 +385,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     @Transactional
     public void updateWork(WorkPublishDTO dto, Long userId) {
         validateMaterials(dto.getMaterialSummary(), dto.getMaterials());
+        validateCategoryCraft(dto.getCategoryId(), dto.getCraftTypeId());
 
         Work work = getById(dto.getId());
         if (work == null || !work.getUserId().equals(userId)) {
@@ -390,6 +402,8 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setCraftTypeId(dto.getCraftTypeId());
         work.setDifficulty(validateAndNormalizeDifficulty(dto.getDifficulty(), dto.getSteps()));
         work.setWorkStatus(validateAndNormalizeWorkStatus(dto.getWorkStatus()));
+        work.setCompletionLevel(validateAndNormalizeCompletionLevel(dto.getCompletionLevel(), dto.getWorkStatus()));
+        work.setCompletionNote(normalizeCompletionNote(dto.getCompletionNote()));
         work.setUpdateTime(LocalDateTime.now());
         updateById(work);
 
@@ -679,6 +693,59 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         }
 
         return trimmedStatus;
+    }
+
+    private void validateCategoryCraft(Long categoryId, Long craftTypeId) {
+        if (categoryId == null || craftTypeId == null) {
+            return;
+        }
+        String errorMsg = categoryCraftRelationService.validateCategoryCraftRelation(categoryId, craftTypeId);
+        if (errorMsg != null) {
+            throw new RuntimeException(errorMsg);
+        }
+    }
+
+    private Integer validateAndNormalizeCompletionLevel(Integer completionLevel, String workStatus) {
+        if (completionLevel == null) {
+            if (WORK_STATUS_FINISHED.equals(workStatus) || WORK_STATUS_REPAIR.equals(workStatus)) {
+                return 5;
+            }
+            if (WORK_STATUS_SEMI_FINISHED.equals(workStatus)) {
+                return 3;
+            }
+            if (WORK_STATUS_PRACTICE.equals(workStatus)) {
+                return 4;
+            }
+            return 5;
+        }
+
+        int level = completionLevel;
+        if (level < COMPLETION_LEVEL_MIN) {
+            level = COMPLETION_LEVEL_MIN;
+        }
+        if (level > COMPLETION_LEVEL_MAX) {
+            level = COMPLETION_LEVEL_MAX;
+        }
+
+        if (WORK_STATUS_FINISHED.equals(workStatus) && level < 4) {
+            throw new RuntimeException("标记为【正式成品】的作品，工艺完成度应达到精修(4级)或完工(5级)，当前为" + level + "级");
+        }
+        if (WORK_STATUS_SEMI_FINISHED.equals(workStatus) && level >= 5) {
+            throw new RuntimeException("标记为【半成品】的作品，工艺完成度不应标记为完工(5级)，请调整完成度或作品状态");
+        }
+
+        return level;
+    }
+
+    private String normalizeCompletionNote(String completionNote) {
+        if (completionNote == null || completionNote.trim().isEmpty()) {
+            return null;
+        }
+        String trimmed = completionNote.trim();
+        if (trimmed.length() > COMPLETION_NOTE_MAX_LENGTH) {
+            trimmed = trimmed.substring(0, COMPLETION_NOTE_MAX_LENGTH);
+        }
+        return trimmed;
     }
 
     @Override

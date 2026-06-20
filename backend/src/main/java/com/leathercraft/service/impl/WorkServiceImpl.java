@@ -59,6 +59,11 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
     private static final String DIFFICULTY_INTERMEDIATE = "intermediate";
     private static final String DIFFICULTY_ADVANCED = "advanced";
 
+    private static final String WORK_STATUS_PRACTICE = "practice";
+    private static final String WORK_STATUS_FINISHED = "finished";
+    private static final String WORK_STATUS_REPAIR = "repair";
+    private static final String WORK_STATUS_SEMI_FINISHED = "semi_finished";
+
     private static final int BEGINNER_MAX_STEPS = 3;
     private static final int INTERMEDIATE_MAX_STEPS = 7;
 
@@ -348,6 +353,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setCategoryId(dto.getCategoryId());
         work.setCraftTypeId(dto.getCraftTypeId());
         work.setDifficulty(validateAndNormalizeDifficulty(dto.getDifficulty(), dto.getSteps()));
+        work.setWorkStatus(validateAndNormalizeWorkStatus(dto.getWorkStatus()));
         work.setViewCount(0);
         work.setFavoriteCount(0);
         work.setStatus(1);
@@ -380,6 +386,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         work.setCategoryId(dto.getCategoryId());
         work.setCraftTypeId(dto.getCraftTypeId());
         work.setDifficulty(validateAndNormalizeDifficulty(dto.getDifficulty(), dto.getSteps()));
+        work.setWorkStatus(validateAndNormalizeWorkStatus(dto.getWorkStatus()));
         work.setUpdateTime(LocalDateTime.now());
         updateById(work);
 
@@ -603,6 +610,24 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         if (DIFFICULTY_INTERMEDIATE.equals(difficulty)) return "进阶";
         if (DIFFICULTY_ADVANCED.equals(difficulty)) return "复杂";
         return difficulty;
+    }
+
+    private String validateAndNormalizeWorkStatus(String workStatus) {
+        if (workStatus == null || workStatus.trim().isEmpty()) {
+            return WORK_STATUS_FINISHED;
+        }
+
+        String trimmedStatus = workStatus.trim();
+        boolean isValid = WORK_STATUS_PRACTICE.equals(trimmedStatus)
+                || WORK_STATUS_FINISHED.equals(trimmedStatus)
+                || WORK_STATUS_REPAIR.equals(trimmedStatus)
+                || WORK_STATUS_SEMI_FINISHED.equals(trimmedStatus);
+
+        if (!isValid) {
+            throw new RuntimeException("作品状态值无效，有效值为：practice(练习样件)、finished(正式成品)、repair(修复件)、semi_finished(半成品)");
+        }
+
+        return trimmedStatus;
     }
 
     @Override

@@ -105,3 +105,61 @@ export const getCraftClass = (name) => {
 export const getStepClass = (type) => {
   return CRAFT_STYLES[type] ? `craft-badge--${type}` : 'craft-badge--other'
 }
+
+export const WORK_STATUS = {
+  practice: {
+    key: 'practice',
+    name: '练习样件',
+    icon: '📝',
+    tagType: 'default',
+    color: '#8c8c8c',
+    bgColor: '#fafafa',
+    borderColor: '#d9d9d9',
+    description: '用于练习技艺的样件作品，不追求完美成品效果'
+  },
+  finished: {
+    key: 'finished',
+    name: '正式成品',
+    icon: '✨',
+    tagType: 'success',
+    color: '#52c41a',
+    bgColor: '#f6ffed',
+    borderColor: '#b7eb8f',
+    description: '精心制作完成的正式作品，用于展示或使用'
+  },
+  repair: {
+    key: 'repair',
+    name: '修复件',
+    icon: '🔧',
+    tagType: 'warning',
+    color: '#fa8c16',
+    bgColor: '#fff7e6',
+    borderColor: '#ffd591',
+    description: '对旧皮具进行修复、翻新的作品，记录修复过程'
+  },
+  semi_finished: {
+    key: 'semi_finished',
+    name: '半成品',
+    icon: '⏳',
+    tagType: 'info',
+    color: '#1890ff',
+    bgColor: '#e6f7ff',
+    borderColor: '#91d5ff',
+    description: '尚未完成的作品，记录制作进度，后续继续完善'
+  }
+}
+
+export const WORK_STATUS_ORDER = ['finished', 'practice', 'semi_finished', 'repair']
+
+export const getWorkStatusInfo = (key) => {
+  return WORK_STATUS[key] || null
+}
+
+export const getWorkStatusClass = (key) => {
+  return key ? `work-status-badge--${key}` : ''
+}
+
+export const getWorkStatusName = (key) => {
+  const info = getWorkStatusInfo(key)
+  return info ? info.name : ''
+}

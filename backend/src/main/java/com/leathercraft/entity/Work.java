@@ -36,6 +36,8 @@ public class Work {
 
     private String difficulty;
 
+    private String workStatus;
+
     private Integer viewCount;
 
     private Integer favoriteCount;
@@ -173,6 +175,14 @@ public class Work {
 
     public void setDifficulty(String difficulty) {
         this.difficulty = difficulty;
+    }
+
+    public String getWorkStatus() {
+        return workStatus;
+    }
+
+    public void setWorkStatus(String workStatus) {
+        this.workStatus = workStatus;
     }
 
     public Integer getViewCount() {

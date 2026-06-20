@@ -78,6 +78,14 @@
                 </span>
               </template>
             </van-field>
+            <van-field
+              :model-value="selectedWorkStatusText"
+              is-link
+              readonly
+              label="作品状态"
+              placeholder="请选择作品状态（默认：正式成品）"
+              @click="openWorkStatusPicker"
+            />
           </van-cell-group>
         </div>
 
@@ -530,6 +538,31 @@
         </div>
       </div>
     </van-popup>
+
+    <van-popup v-model:show="showWorkStatusPicker" position="bottom" round>
+      <div class="option-panel">
+        <div class="option-toolbar">
+          <button type="button" class="option-action cancel" @click="showWorkStatusPicker = false">取消</button>
+          <div class="option-title">选择作品状态</div>
+          <button type="button" class="option-action confirm" @click="confirmWorkStatusSelection">确认</button>
+        </div>
+        <div class="work-status-list">
+          <div
+            v-for="key in WORK_STATUS_ORDER"
+            :key="key"
+            class="work-status-option"
+            :class="{ active: workStatusPickerValue[0] === key }"
+            @click="selectWorkStatusOption(key)"
+          >
+            <div class="ws-header">
+              <span class="ws-icon">{{ WORK_STATUS[key].icon }}</span>
+              <span class="ws-name">{{ WORK_STATUS[key].name }}</span>
+            </div>
+            <div class="ws-detail">{{ WORK_STATUS[key].description }}</div>
+          </div>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
@@ -539,7 +572,7 @@ import { useRouter } from 'vue-router'
 import { getCategories, publishWork } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast, showDialog } from 'vant'
-import { CRAFT_STYLES, getStepTypeInfo, DIFFICULTY_LEVELS, DIFFICULTY_ORDER, getSuggestedDifficultyBySteps, getDifficultyInfo, getDifficultyStepRange } from '@/utils/craftConfig'
+import { CRAFT_STYLES, getStepTypeInfo, DIFFICULTY_LEVELS, DIFFICULTY_ORDER, getSuggestedDifficultyBySteps, getDifficultyInfo, getDifficultyStepRange, WORK_STATUS, WORK_STATUS_ORDER, getWorkStatusInfo } from '@/utils/craftConfig'
 import {
   validateAllMaterials,
   validateSingleMaterial,
@@ -605,6 +638,7 @@ const form = ref({
   categoryId: null,
   craftTypeId: null,
   difficulty: null,
+  workStatus: null,
   steps: [createEmptyStep()],
   materialSummaryObj: {
     mainMaterials: [],
@@ -627,6 +661,8 @@ const craftPickerValue = ref([])
 const stepTypePickerValue = ref([])
 const showDifficultyPicker = ref(false)
 const difficultyPickerValue = ref([])
+const showWorkStatusPicker = ref(false)
+const workStatusPickerValue = ref([])
 
 const selectedCategoryName = computed(() => {
   if (!form.value.categoryId) return ''
@@ -643,6 +679,12 @@ const selectedCraftName = computed(() => {
 const selectedDifficultyText = computed(() => {
   if (!form.value.difficulty) return ''
   const info = getDifficultyInfo(form.value.difficulty)
+  return info ? `${info.icon} ${info.name}` : ''
+})
+
+const selectedWorkStatusText = computed(() => {
+  if (!form.value.workStatus) return ''
+  const info = getWorkStatusInfo(form.value.workStatus)
   return info ? `${info.icon} ${info.name}` : ''
 })
 
@@ -959,6 +1001,27 @@ const confirmDifficultySelection = () => {
   showDifficultyPicker.value = false
 }
 
+const openWorkStatusPicker = () => {
+  if (form.value.workStatus) {
+    workStatusPickerValue.value = [form.value.workStatus]
+  } else if (!workStatusPickerValue.value.length && WORK_STATUS_ORDER.length) {
+    workStatusPickerValue.value = [WORK_STATUS_ORDER[0]]
+  }
+  showWorkStatusPicker.value = true
+}
+
+const selectWorkStatusOption = (key) => {
+  workStatusPickerValue.value = [key]
+}
+
+const confirmWorkStatusSelection = () => {
+  const key = workStatusPickerValue.value[0]
+  if (key) {
+    form.value.workStatus = key
+  }
+  showWorkStatusPicker.value = false
+}
+
 const afterRead = (file) => {
   fileList.value = fileList.value.concat(file)
   form.value.cover = file[0]?.content || ''
@@ -1046,7 +1109,8 @@ const submit = async () => {
       processImages,
       steps: steps.length ? steps : undefined,
       materialSummary: hasMaterialSummary ? JSON.stringify(materialSummaryData) : undefined,
-      difficulty: form.value.difficulty || undefined
+      difficulty: form.value.difficulty || undefined,
+      workStatus: form.value.workStatus || 'finished'
     })
 
     showToast('发布成功')
@@ -1634,5 +1698,54 @@ onMounted(async () => {
 .diff-range {
   font-size: 12px;
   color: #999;
+}
+
+.work-status-list {
+  overflow-y: auto;
+  padding: 8px 16px 18px;
+}
+
+.work-status-option {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  border: 2px solid #f0f0f0;
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.work-status-option:last-child {
+  margin-bottom: 0;
+}
+
+.work-status-option.active {
+  border-color: #c08457;
+  background: #fdf7f0;
+  box-shadow: 0 2px 8px rgba(192, 132, 87, 0.15);
+}
+
+.ws-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ws-icon {
+  font-size: 20px;
+}
+
+.ws-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.ws-detail {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
 }
 </style>

@@ -8,6 +8,13 @@
       <div class="compact-content">
         <h3 class="compact-title">{{ work.title }}</h3>
         <div class="compact-tags">
+          <span
+            v-if="work.workStatus && getWorkStatusInfo(work.workStatus)"
+            class="work-status-badge-tag"
+            :class="getWorkStatusClass(work.workStatus)"
+          >
+            {{ getWorkStatusInfo(work.workStatus).icon }} {{ getWorkStatusInfo(work.workStatus).name }}
+          </span>
           <van-tag v-if="work.categoryName" type="primary" size="medium" plain>
             {{ work.categoryName }}
           </van-tag>
@@ -38,6 +45,13 @@
         <h3 class="card-title">{{ work.title }}</h3>
         <div class="card-meta">
           <div class="card-tags">
+            <span
+              v-if="work.workStatus && getWorkStatusInfo(work.workStatus)"
+              class="work-status-badge-tag"
+              :class="getWorkStatusClass(work.workStatus)"
+            >
+              {{ getWorkStatusInfo(work.workStatus).icon }} {{ getWorkStatusInfo(work.workStatus).name }}
+            </span>
             <span class="category">{{ work.categoryName }}</span>
             <span v-if="work.craftTypeName" class="craft-badge-tag" :class="getCraftClass(work.craftTypeName)">
               {{ getCraftInfoByName(work.craftTypeName).icon }} {{ work.craftTypeName }}
@@ -76,7 +90,7 @@
 
 <script setup>
 import MaterialSummary from './MaterialSummary.vue'
-import { getCraftInfoByName, getCraftClass, getDifficultyInfo, getDifficultyClass } from '@/utils/craftConfig'
+import { getCraftInfoByName, getCraftClass, getDifficultyInfo, getDifficultyClass, getWorkStatusInfo, getWorkStatusClass } from '@/utils/craftConfig'
 
 defineProps({
   work: {
@@ -287,5 +301,40 @@ defineProps({
   background: #fff1f0;
   color: #cf1322;
   border-color: #ffa39e;
+}
+
+.work-status-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.work-status-badge-tag.work-status-badge--practice {
+  background: #fafafa;
+  color: #8c8c8c;
+  border-color: #d9d9d9;
+}
+
+.work-status-badge-tag.work-status-badge--finished {
+  background: #f6ffed;
+  color: #389e0d;
+  border-color: #b7eb8f;
+}
+
+.work-status-badge-tag.work-status-badge--repair {
+  background: #fff7e6;
+  color: #d46b08;
+  border-color: #ffd591;
+}
+
+.work-status-badge-tag.work-status-badge--semi_finished {
+  background: #e6f7ff;
+  color: #096dd9;
+  border-color: #91d5ff;
 }
 </style>

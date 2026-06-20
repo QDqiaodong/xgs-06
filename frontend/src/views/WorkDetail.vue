@@ -163,6 +163,15 @@
         </div>
 
         <div class="tags">
+          <span
+            v-if="work.workStatus && getWorkStatusInfo(work.workStatus)"
+            class="work-status-tag"
+            :class="'work-status-tag--' + work.workStatus"
+          >
+            <span class="work-status-icon">{{ getWorkStatusInfo(work.workStatus).icon }}</span>
+            <span>{{ getWorkStatusInfo(work.workStatus).name }}</span>
+            <span class="work-status-desc">{{ getWorkStatusInfo(work.workStatus).description }}</span>
+          </span>
           <van-tag plain type="primary">{{ work.categoryName }}</van-tag>
           <span v-if="work.craftTypeName" class="craft-tag" :class="getCraftTagClass(work.craftTypeName)">
             <span class="craft-icon">{{ getCraftIcon(work.craftTypeName) }}</span>
@@ -308,7 +317,7 @@ import { useRoute } from 'vue-router'
 import { getWorkDetail, toggleFavorite, getRetrospective, saveRetrospective, deleteRetrospective } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast, showImagePreview, showConfirmDialog } from 'vant'
-import { getStepTypeInfo, getCraftInfoByName, getCraftClass, getStepClass, getDifficultyInfo } from '@/utils/craftConfig'
+import { getStepTypeInfo, getCraftInfoByName, getCraftClass, getStepClass, getDifficultyInfo, getWorkStatusInfo, getWorkStatusClass } from '@/utils/craftConfig'
 import CraftStepReader from '@/components/CraftStepReader.vue'
 import MaterialSummary from '@/components/MaterialSummary.vue'
 
@@ -1080,6 +1089,51 @@ onMounted(() => loadWorkDetail())
   background: #fff1f0;
   color: #cf1322;
   border: 1px solid #ffa39e;
+}
+
+.work-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.work-status-icon {
+  font-size: 14px;
+}
+
+.work-status-desc {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-left: 2px;
+  font-weight: 400;
+}
+
+.work-status-tag--practice {
+  background: #fafafa;
+  color: #8c8c8c;
+  border: 1px solid #d9d9d9;
+}
+
+.work-status-tag--finished {
+  background: #f6ffed;
+  color: #389e0d;
+  border: 1px solid #b7eb8f;
+}
+
+.work-status-tag--repair {
+  background: #fff7e6;
+  color: #d46b08;
+  border: 1px solid #ffd591;
+}
+
+.work-status-tag--semi_finished {
+  background: #e6f7ff;
+  color: #096dd9;
+  border: 1px solid #91d5ff;
 }
 
 .retrospective-card {

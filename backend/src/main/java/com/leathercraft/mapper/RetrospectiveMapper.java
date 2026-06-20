@@ -28,10 +28,10 @@ public interface RetrospectiveMapper extends BaseMapper<Retrospective> {
             "ORDER BY r.update_time DESC")
     IPage<Retrospective> selectUserRetrospectives(Page<Retrospective> page, @Param("userId") Long userId);
 
-    @Insert("INSERT INTO t_retrospective (work_id, user_id, rework_points, loss_reasons, improvements, create_time, update_time, deleted) " +
-            "VALUES (#{workId}, #{userId}, #{reworkPoints}, #{lossReasons}, #{improvements}, NOW(), NOW(), 0) " +
-            "ON DUPLICATE KEY UPDATE rework_points = #{reworkPoints}, loss_reasons = #{lossReasons}, " +
-            "improvements = #{improvements}, user_id = #{userId}, update_time = NOW(), deleted = 0")
+    @Insert("INSERT INTO t_retrospective (work_id, user_id, rework_points, rework_reason, occurrence_stage, handle_result, loss_reasons, improvements, create_time, update_time, deleted) " +
+            "VALUES (#{workId}, #{userId}, #{reworkPoints}, #{reworkReason}, #{occurrenceStage}, #{handleResult}, #{lossReasons}, #{improvements}, NOW(), NOW(), 0) " +
+            "ON DUPLICATE KEY UPDATE rework_points = #{reworkPoints}, rework_reason = #{reworkReason}, occurrence_stage = #{occurrenceStage}, " +
+            "handle_result = #{handleResult}, loss_reasons = #{lossReasons}, improvements = #{improvements}, user_id = #{userId}, update_time = NOW(), deleted = 0")
     int upsertByWorkId(Retrospective retrospective);
 
     @Update("UPDATE t_retrospective SET deleted = 1, update_time = NOW() WHERE work_id = #{workId} AND deleted = 0")

@@ -29,6 +29,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -482,8 +485,9 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
     private void saveWorkSteps(Long workId, List<WorkStepDTO> stepDTOs) {
         if (stepDTOs != null && !stepDTOs.isEmpty()) {
-            for (int i = 0; i < stepDTOs.size(); i++) {
-                WorkStepDTO dto = stepDTOs.get(i);
+            List<WorkStepDTO> sortedSteps = normalizeAndSortSteps(stepDTOs);
+            for (int i = 0; i < sortedSteps.size(); i++) {
+                WorkStepDTO dto = sortedSteps.get(i);
                 WorkStep step = new WorkStep();
                 step.setWorkId(workId);
                 step.setStepName(dto.getStepName());
@@ -492,7 +496,7 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
                 step.setMaterials(dto.getMaterials());
                 step.setTips(dto.getTips());
                 step.setDescription(dto.getDescription());
-                step.setSort(dto.getSort() != null ? dto.getSort() : i);
+                step.setSort(i);
                 step.setCreateTime(LocalDateTime.now());
                 workStepMapper.insert(step);
 
@@ -501,6 +505,53 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
                 }
             }
         }
+    }
+
+    private List<WorkStepDTO> normalizeAndSortSteps(List<WorkStepDTO> stepDTOs) {
+        List<WorkStepDTO> result = new ArrayList<>(stepDTOs);
+        boolean hasAnomaly = false;
+        Set<Integer> seenSorts = new HashSet<>();
+        boolean hasNullSort = false;
+
+        for (WorkStepDTO dto : result) {
+            Integer sort = dto.getSort();
+            if (sort == null) {
+                hasNullSort = true;
+                hasAnomaly = true;
+            } else if (sort < 0) {
+                hasAnomaly = true;
+            } else if (seenSorts.contains(sort)) {
+                hasAnomaly = true;
+            } else {
+                seenSorts.add(sort);
+            }
+        }
+
+        if (!hasAnomaly && !seenSorts.isEmpty()) {
+            int maxSort = Collections.max(seenSorts);
+            if (maxSort >= result.size()) {
+                hasAnomaly = true;
+            }
+            for (int i = 0; i < result.size(); i++) {
+                if (!seenSorts.contains(i)) {
+                    hasAnomaly = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasAnomaly) {
+            result.sort((a, b) -> {
+                Integer sortA = a.getSort();
+                Integer sortB = b.getSort();
+                if (sortA == null && sortB == null) return 0;
+                if (sortA == null) return 1;
+                if (sortB == null) return -1;
+                return Integer.compare(sortA, sortB);
+            });
+        }
+
+        return result;
     }
 
     @Override

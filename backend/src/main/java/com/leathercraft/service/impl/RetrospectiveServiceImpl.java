@@ -13,6 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class RetrospectiveServiceImpl extends ServiceImpl<RetrospectiveMapper, Retrospective> implements RetrospectiveService {
 
@@ -57,6 +60,9 @@ public class RetrospectiveServiceImpl extends ServiceImpl<RetrospectiveMapper, R
         retrospective.setWorkId(dto.getWorkId());
         retrospective.setUserId(userId);
         retrospective.setReworkPoints(trimOrEmpty(dto.getReworkPoints()));
+        retrospective.setReworkReason(trimOrEmpty(dto.getReworkReason()));
+        retrospective.setOccurrenceStage(normalizeOccurrenceStage(dto.getOccurrenceStage()));
+        retrospective.setHandleResult(trimOrEmpty(dto.getHandleResult()));
         retrospective.setLossReasons(trimOrEmpty(dto.getLossReasons()));
         retrospective.setImprovements(trimOrEmpty(dto.getImprovements()));
         baseMapper.upsertByWorkId(retrospective);
@@ -77,5 +83,33 @@ public class RetrospectiveServiceImpl extends ServiceImpl<RetrospectiveMapper, R
 
     private String trimOrEmpty(String text) {
         return text == null ? "" : text.trim();
+    }
+
+    private String normalizeOccurrenceStage(String stage) {
+        if (stage == null || stage.trim().isEmpty()) {
+            return "";
+        }
+        String trimmed = stage.trim();
+        String[] validStages = {"裁切", "削薄", "皮雕", "塑形", "打孔", "封边", "缝制", "五金安装", "打磨", "染色", "编织", "其他"};
+        String[] inputStages = trimmed.split("[,，、;；\\s]+");
+        List<String> normalized = new ArrayList<>();
+        for (String input : inputStages) {
+            String s = input.trim();
+            if (s.isEmpty()) continue;
+            boolean matched = false;
+            for (String valid : validStages) {
+                if (s.equals(valid) || s.contains(valid) || valid.contains(s)) {
+                    if (!normalized.contains(valid)) {
+                        normalized.add(valid);
+                    }
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched && !normalized.contains("其他")) {
+                normalized.add("其他");
+            }
+        }
+        return String.join(",", normalized);
     }
 }

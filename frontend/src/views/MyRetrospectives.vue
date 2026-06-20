@@ -49,9 +49,31 @@
             </div>
 
             <div class="retro-card-body">
+              <div class="retro-field" v-if="item.occurrenceStage">
+                <span class="retro-field-label stage"><van-icon name="location-o" /> 发生阶段</span>
+                <div class="retro-stage-tags">
+                  <van-tag
+                    v-for="(stage, idx) in parseStages(item.occurrenceStage)"
+                    :key="idx"
+                    size="small"
+                    :type="getStageTagType(stage)"
+                    plain
+                  >
+                    {{ stage }}
+                  </van-tag>
+                </div>
+              </div>
               <div class="retro-field" v-if="item.reworkPoints">
                 <span class="retro-field-label rework"><van-icon name="warning-o" /> 返工点</span>
                 <p class="retro-field-text">{{ item.reworkPoints }}</p>
+              </div>
+              <div class="retro-field" v-if="item.reworkReason">
+                <span class="retro-field-label reason"><van-icon name="question-o" /> 返工原因</span>
+                <p class="retro-field-text">{{ item.reworkReason }}</p>
+              </div>
+              <div class="retro-field" v-if="item.handleResult">
+                <span class="retro-field-label result"><van-icon name="success" /> 处理结果</span>
+                <p class="retro-field-text">{{ item.handleResult }}</p>
               </div>
               <div class="retro-field" v-if="item.lossReasons">
                 <span class="retro-field-label loss"><van-icon name="info-o" /> 损耗原因</span>
@@ -103,6 +125,30 @@ const formatTime = (time) => {
   const date = new Date(time)
   if (isNaN(date.getTime())) return ''
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+const stageTagTypeMap = {
+  '裁切': 'default',
+  '削薄': 'default',
+  '皮雕': 'warning',
+  '塑形': 'warning',
+  '打孔': 'primary',
+  '封边': 'success',
+  '缝制': 'primary',
+  '五金安装': 'danger',
+  '打磨': 'default',
+  '染色': 'warning',
+  '编织': 'primary',
+  '其他': 'default'
+}
+
+const parseStages = (stageStr) => {
+  if (!stageStr) return []
+  return stageStr.split(/[,，、;；\s]+/).filter(s => s.trim())
+}
+
+const getStageTagType = (stage) => {
+  return stageTagTypeMap[stage] || 'default'
 }
 
 const goDetail = (workId) => {
@@ -255,8 +301,27 @@ if (userStore.userInfo) {
   margin-bottom: 4px;
 }
 
+.retro-field-label.stage {
+  color: #1890ff;
+}
+
+.retro-stage-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-left: 8px;
+}
+
 .retro-field-label.rework {
   color: #d46b08;
+}
+
+.retro-field-label.reason {
+  color: #d4380d;
+}
+
+.retro-field-label.result {
+  color: #389e0d;
 }
 
 .retro-field-label.loss {

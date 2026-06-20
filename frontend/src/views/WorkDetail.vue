@@ -232,9 +232,31 @@
           </div>
 
           <div class="retro-body" v-if="retrospective">
+            <div class="retro-item" v-if="retrospective.occurrenceStage">
+              <div class="retro-item-label retro-stage-label"><van-icon name="location-o" /> 发生阶段</div>
+              <div class="retro-stage-tags">
+                <van-tag
+                  v-for="(stage, idx) in parseOccurrenceStages(retrospective.occurrenceStage)"
+                  :key="idx"
+                  size="medium"
+                  :type="getStageTagType(stage)"
+                  plain
+                >
+                  {{ stage }}
+                </van-tag>
+              </div>
+            </div>
             <div class="retro-item" v-if="retrospective.reworkPoints">
               <div class="retro-item-label"><van-icon name="warning-o" /> 返工点</div>
               <p class="retro-item-text">{{ retrospective.reworkPoints }}</p>
+            </div>
+            <div class="retro-item" v-if="retrospective.reworkReason">
+              <div class="retro-item-label retro-reason-label"><van-icon name="question-o" /> 返工原因</div>
+              <p class="retro-item-text retro-reason-text">{{ retrospective.reworkReason }}</p>
+            </div>
+            <div class="retro-item" v-if="retrospective.handleResult">
+              <div class="retro-item-label retro-result-label"><van-icon name="success" /> 处理结果</div>
+              <p class="retro-item-text retro-result-text">{{ retrospective.handleResult }}</p>
             </div>
             <div class="retro-item" v-if="retrospective.lossReasons">
               <div class="retro-item-label"><van-icon name="info-o" /> 损耗原因</div>
@@ -271,10 +293,37 @@
         <div class="retro-popup-tip">记录本次制作的得失，沉淀可复用的经验</div>
         <van-cell-group inset class="retro-form">
           <van-field
+            v-model="retroForm.occurrenceStage"
+            label="发生阶段"
+            placeholder="如：封边、缝制，多个用逗号分隔"
+            maxlength="100"
+            show-word-limit
+          />
+          <van-field
             v-model="retroForm.reworkPoints"
             label="返工点"
             type="textarea"
             placeholder="记录需要返工的环节与问题"
+            rows="2"
+            autosize
+            maxlength="500"
+            show-word-limit
+          />
+          <van-field
+            v-model="retroForm.reworkReason"
+            label="返工原因"
+            type="textarea"
+            placeholder="具体描述为何需要返工"
+            rows="2"
+            autosize
+            maxlength="500"
+            show-word-limit
+          />
+          <van-field
+            v-model="retroForm.handleResult"
+            label="处理结果"
+            type="textarea"
+            placeholder="最终如何解决该问题"
             rows="2"
             autosize
             maxlength="500"
@@ -334,7 +383,7 @@ const finishedIndex = ref(0)
 const retrospective = ref(null)
 const showRetroPopup = ref(false)
 const retroSaving = ref(false)
-const retroForm = ref({ reworkPoints: '', lossReasons: '', improvements: '' })
+const retroForm = ref({ reworkPoints: '', reworkReason: '', occurrenceStage: '', handleResult: '', lossReasons: '', improvements: '' })
 
 const isAuthor = computed(() => {
   return !!(work.value && work.value.userId && userStore.userInfo && work.value.userId === userStore.userInfo.id)
@@ -456,6 +505,30 @@ const formatTime = (time) => {
 const getCraftIcon = (name) => getCraftInfoByName(name).icon
 const getCraftTagClass = (name) => `craft-tag ${getCraftClass(name)}`
 
+const stageTagTypeMap = {
+  '裁切': 'default',
+  '削薄': 'default',
+  '皮雕': 'warning',
+  '塑形': 'warning',
+  '打孔': 'primary',
+  '封边': 'success',
+  '缝制': 'primary',
+  '五金安装': 'danger',
+  '打磨': 'default',
+  '染色': 'warning',
+  '编织': 'primary',
+  '其他': 'default'
+}
+
+const parseOccurrenceStages = (stageStr) => {
+  if (!stageStr) return []
+  return stageStr.split(/[,，、;；\s]+/).filter(s => s.trim())
+}
+
+const getStageTagType = (stage) => {
+  return stageTagTypeMap[stage] || 'default'
+}
+
 const handleFavorite = async () => {
   if (!userStore.isLoggedIn()) {
     showToast('请先登录')
@@ -483,17 +556,26 @@ const openRetroEditor = () => {
   if (retrospective.value) {
     retroForm.value = {
       reworkPoints: retrospective.value.reworkPoints || '',
+      reworkReason: retrospective.value.reworkReason || '',
+      occurrenceStage: retrospective.value.occurrenceStage || '',
+      handleResult: retrospective.value.handleResult || '',
       lossReasons: retrospective.value.lossReasons || '',
       improvements: retrospective.value.improvements || ''
     }
   } else {
-    retroForm.value = { reworkPoints: '', lossReasons: '', improvements: '' }
+    retroForm.value = { reworkPoints: '', reworkReason: '', occurrenceStage: '', handleResult: '', lossReasons: '', improvements: '' }
   }
   showRetroPopup.value = true
 }
 
 const saveRetro = async () => {
-  if (!retroForm.value.reworkPoints.trim() && !retroForm.value.lossReasons.trim() && !retroForm.value.improvements.trim()) {
+  const hasContent = retroForm.value.reworkPoints?.trim()
+    || retroForm.value.reworkReason?.trim()
+    || retroForm.value.occurrenceStage?.trim()
+    || retroForm.value.handleResult?.trim()
+    || retroForm.value.lossReasons?.trim()
+    || retroForm.value.improvements?.trim()
+  if (!hasContent) {
     showToast('请至少填写一项复盘内容')
     return
   }
@@ -501,9 +583,12 @@ const saveRetro = async () => {
   try {
     await saveRetrospective({
       workId: Number(route.params.id),
-      reworkPoints: retroForm.value.reworkPoints.trim(),
-      lossReasons: retroForm.value.lossReasons.trim(),
-      improvements: retroForm.value.improvements.trim()
+      reworkPoints: retroForm.value.reworkPoints?.trim() || '',
+      reworkReason: retroForm.value.reworkReason?.trim() || '',
+      occurrenceStage: retroForm.value.occurrenceStage?.trim() || '',
+      handleResult: retroForm.value.handleResult?.trim() || '',
+      lossReasons: retroForm.value.lossReasons?.trim() || '',
+      improvements: retroForm.value.improvements?.trim() || ''
     })
     showToast('复盘记录已保存')
     showRetroPopup.value = false
@@ -1201,6 +1286,33 @@ onMounted(() => loadWorkDetail())
   padding-left: 4px;
   border-left: 3px solid #e8d5bf;
   padding-left: 10px;
+}
+
+.retro-stage-label {
+  color: #1890ff;
+}
+
+.retro-stage-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 4px;
+}
+
+.retro-reason-label {
+  color: #d4380d;
+}
+
+.retro-reason-text {
+  border-left-color: #ffbb96;
+}
+
+.retro-result-label {
+  color: #389e0d;
+}
+
+.retro-result-text {
+  border-left-color: #b7eb8f;
 }
 
 .retro-improve-label {

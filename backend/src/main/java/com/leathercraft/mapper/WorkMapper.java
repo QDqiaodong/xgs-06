@@ -103,4 +103,24 @@ public interface WorkMapper extends BaseMapper<Work> {
 
     @Update("UPDATE t_work SET favorite_count = favorite_count - 1 WHERE id = #{id} AND status = 1 AND deleted = 0 AND favorite_count > 0")
     int decrementFavoriteCountById(@Param("id") Long id);
+
+    @Select("SELECT c.id, c.name, COUNT(*) as count FROM t_work w " +
+            "JOIN t_category c ON w.category_id = c.id " +
+            "WHERE w.user_id = #{userId} AND w.status = 1 AND w.deleted = 0 " +
+            "GROUP BY w.category_id, c.id, c.name " +
+            "ORDER BY count DESC")
+    List<Map<String, Object>> selectAllCategoryStats(@Param("userId") Long userId);
+
+    @Select("SELECT ct.id, ct.name, COUNT(*) as count FROM t_work w " +
+            "JOIN t_category ct ON w.craft_type_id = ct.id " +
+            "WHERE w.user_id = #{userId} AND w.status = 1 AND w.deleted = 0 " +
+            "GROUP BY w.craft_type_id, ct.id, ct.name " +
+            "ORDER BY count DESC")
+    List<Map<String, Object>> selectAllCraftTypeStats(@Param("userId") Long userId);
+
+    @Select("SELECT w.work_status as status, COUNT(*) as count FROM t_work w " +
+            "WHERE w.user_id = #{userId} AND w.status = 1 AND w.deleted = 0 " +
+            "GROUP BY w.work_status " +
+            "ORDER BY count DESC")
+    List<Map<String, Object>> selectWorkStatusStats(@Param("userId") Long userId);
 }

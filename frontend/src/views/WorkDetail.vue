@@ -23,125 +23,38 @@
         <span>该作品已下架，仅作者可查看</span>
       </div>
 
-      <div class="gallery-tabs-wrapper">
-        <van-tabs v-model:active="galleryTab" class="gallery-tabs" sticky offset-top="46" line-width="40px">
-          <van-tab title="成品图" name="finished">
-            <div class="gallery-cabin finished-cabin">
-              <div class="cabin-header">
-                <van-icon name="star-o" class="cabin-icon" />
-                <span class="cabin-title">作品成品展示</span>
-                <span class="cabin-subtitle" v-if="validDisplayImages.length">共 {{ validDisplayImages.length }} 张</span>
-              </div>
-              <van-swipe
-                v-if="validDisplayImages.length"
-                class="finished-swiper"
-                :autoplay="4000"
-                indicator-color="#fff"
-                :show-indicators="validDisplayImages.length > 1"
-              >
-                <van-swipe-item v-for="(img, idx) in validDisplayImages" :key="idx">
-                  <img :src="img" alt="" @error="onImageError(idx, 'display')" @click="previewFinishedImage(idx)" />
-                </van-swipe-item>
-              </van-swipe>
-              <div v-else class="image-placeholder finished-placeholder">
-                <van-icon name="photo-o" />
-                <span class="placeholder-text">暂无成品图</span>
-              </div>
-              <div v-if="validDisplayImages.length > 1" class="finished-thumbs">
-                <div
-                  v-for="(img, idx) in validDisplayImages"
-                  :key="idx"
-                  class="thumb-item"
-                  :class="{ active: finishedIndex === idx }"
-                  @click="selectFinishedImage(idx)"
-                >
-                  <img :src="img" alt="" @error="onImageError(idx, 'display')" />
-                </div>
-              </div>
-            </div>
-          </van-tab>
-
-          <van-tab title="过程图" name="process">
-            <div class="gallery-cabin process-cabin">
-              <div class="cabin-header">
-                <van-icon name="wap-nav" class="cabin-icon" />
-                <span class="cabin-title">制作过程记录</span>
-                <span class="cabin-subtitle" v-if="hasProcessContent">共 {{ processTotalCount }} 张</span>
-              </div>
-
-              <div v-if="work.steps && work.steps.length" class="process-timeline">
-                <div v-if="totalTimeCost > 0" class="total-time-card">
-                  <van-icon name="clock-o" class="clock-icon" />
-                  <span class="total-time-label">预计总耗时</span>
-                  <span class="total-time-value">{{ formatTotalTime(totalTimeCost) }}</span>
-                </div>
-                <div
-                  v-for="(step, sIdx) in work.steps"
-                  :key="sIdx"
-                  class="timeline-item"
-                >
-                  <div class="timeline-node">
-                    <div class="node-circle" :class="getStepTypeClass(step.stepType)">
-                      {{ getStepIcon(step.stepType) }}
-                    </div>
-                    <div class="node-line" v-if="sIdx < work.steps.length - 1"></div>
-                  </div>
-                  <div class="timeline-content">
-                    <div class="step-meta">
-                      <span class="step-order">第 {{ sIdx + 1 }} 步</span>
-                      <span class="step-name">{{ step.stepName }}</span>
-                      <van-tag v-if="step.stepType" size="medium" :type="getStepTagType(step.stepType)" plain>
-                        {{ getStepTypeName(step.stepType) }}
-                      </van-tag>
-                      <van-tag v-if="step.timeCost && step.timeCost > 0" size="medium" type="primary">
-                        <van-icon name="clock-o" size="11" />
-                        {{ step.timeCost }}分钟
-                      </van-tag>
-                    </div>
-                    <div v-if="getValidStepImages(step, sIdx).length" class="step-image-grid">
-                      <img
-                        v-for="(img, iIdx) in getValidStepImages(step, sIdx)"
-                        :key="iIdx"
-                        :src="img"
-                        alt=""
-                        class="step-image"
-                        :class="'step-image-' + getValidStepImages(step, sIdx).length"
-                        @error="onStepImageError(sIdx, iIdx)"
-                        @click="previewProcessImage(step, sIdx, iIdx)"
-                      />
-                    </div>
-                    <div v-else class="step-no-image">
-                      <van-icon name="photo-o" />
-                      <span>本步暂无配图</span>
-                    </div>
-                    <p v-if="step.description" class="step-desc">{{ step.description }}</p>
-                    <p v-if="step.tips" class="step-tips">
-                      <van-icon name="bulb-o" class="bulb-icon" />
-                      {{ step.tips }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div v-else-if="validProcessImages.length" class="process-list">
-                <div
-                  v-for="(img, idx) in validProcessImages"
-                  :key="idx"
-                  class="process-list-item"
-                  @click="previewProcessListImage(idx)"
-                >
-                  <div class="process-index">{{ idx + 1 }}</div>
-                  <img :src="img" alt="" @error="onImageError(idx, 'process')" />
-                </div>
-              </div>
-
-              <div v-else class="image-placeholder process-placeholder">
-                <van-icon name="photo-o" />
-                <span class="placeholder-text">暂无过程图</span>
-              </div>
-            </div>
-          </van-tab>
-        </van-tabs>
+      <div class="gallery-wrapper">
+        <div class="cabin-header">
+          <van-icon name="star-o" class="cabin-icon" />
+          <span class="cabin-title">作品成品展示</span>
+          <span class="cabin-subtitle" v-if="validDisplayImages.length">共 {{ validDisplayImages.length }} 张</span>
+        </div>
+        <van-swipe
+          v-if="validDisplayImages.length"
+          class="finished-swiper"
+          :autoplay="4000"
+          indicator-color="#fff"
+          :show-indicators="validDisplayImages.length > 1"
+        >
+          <van-swipe-item v-for="(img, idx) in validDisplayImages" :key="idx">
+            <img :src="img" alt="" @error="onImageError(idx, 'display')" @click="previewFinishedImage(idx)" />
+          </van-swipe-item>
+        </van-swipe>
+        <div v-else class="image-placeholder finished-placeholder">
+          <van-icon name="photo-o" />
+          <span class="placeholder-text">暂无成品图</span>
+        </div>
+        <div v-if="validDisplayImages.length > 1" class="finished-thumbs">
+          <div
+            v-for="(img, idx) in validDisplayImages"
+            :key="idx"
+            class="thumb-item"
+            :class="{ active: finishedIndex === idx }"
+            @click="selectFinishedImage(idx)"
+          >
+            <img :src="img" alt="" @error="onImageError(idx, 'display')" />
+          </div>
+        </div>
       </div>
 
       <div class="work-info">
@@ -239,13 +152,38 @@
           </div>
         </div>
 
+        <div
+          v-if="hasProcessContent"
+          class="process-entry-card"
+          @click="openProcessDrawer"
+        >
+          <div class="process-entry-left">
+            <div class="process-entry-icon">
+              <van-icon name="wap-nav" size="22" />
+            </div>
+            <div class="process-entry-info">
+              <div class="process-entry-title">查看制作过程</div>
+              <div class="process-entry-subtitle">
+                <template v-if="work.steps && work.steps.length">
+                  共 {{ work.steps.length }} 个步骤
+                  <template v-if="totalTimeCost > 0"> · 预计耗时 {{ formatTotalTime(totalTimeCost) }}</template>
+                </template>
+                <template v-else-if="validProcessImages.length">
+                  共 {{ validProcessImages.length }} 张过程图
+                </template>
+              </div>
+            </div>
+          </div>
+          <div class="process-entry-right">
+            <van-icon name="arrow" size="16" color="#999" />
+          </div>
+        </div>
+
         <van-divider>作品介绍</van-divider>
         <p class="content-text">{{ work.content }}</p>
 
         <van-divider v-if="work.materialSummary || work.materials">材料用量速览</van-divider>
         <MaterialSummary v-if="work.materialSummary || work.materials" :material-summary="work.materialSummary" :materials-text="work.materials" />
-
-        <CraftStepReader v-if="work.steps && work.steps.length" :steps="work.steps" />
 
         <van-divider v-if="!work.steps || !work.steps.length">制作流程</van-divider>
         <p class="content-text" v-if="(!work.steps || !work.steps.length) && work.craftSteps">{{ work.craftSteps }}</p>
@@ -307,7 +245,109 @@
           </div>
         </div>
       </div>
+
+      <div class="detail-bottom-spacer"></div>
     </div>
+
+    <van-popup
+      v-model:show="showProcessDrawer"
+      round
+      position="bottom"
+      closeable
+      close-icon-position="top-right"
+      :style="{ height: '85%' }"
+      :lock-scroll="true"
+    >
+      <div class="process-drawer">
+        <div class="drawer-header">
+          <h3 class="drawer-title">
+            <van-icon name="wap-nav" color="#8b5a2b" />
+            制作过程
+          </h3>
+          <div class="drawer-meta" v-if="totalTimeCost > 0">
+            <van-icon name="clock-o" />
+            预计总耗时 {{ formatTotalTime(totalTimeCost) }}
+          </div>
+        </div>
+
+        <van-tabs v-model:active="processTab" class="process-tabs" sticky offset-top="0" line-width="40px">
+          <van-tab title="步骤分镜" name="stepReader" v-if="work.steps && work.steps.length">
+            <div class="tab-content-wrap">
+              <CraftStepReader :steps="work.steps" />
+            </div>
+          </van-tab>
+
+          <van-tab title="时间线" name="timeline" v-if="work.steps && work.steps.length">
+            <div class="tab-content-wrap">
+              <div class="process-timeline timeline-in-drawer">
+                <div
+                  v-for="(step, sIdx) in work.steps"
+                  :key="sIdx"
+                  class="timeline-item"
+                >
+                  <div class="timeline-node">
+                    <div class="node-circle" :class="getStepTypeClass(step.stepType)">
+                      {{ getStepIcon(step.stepType) }}
+                    </div>
+                    <div class="node-line" v-if="sIdx < work.steps.length - 1"></div>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="step-meta">
+                      <span class="step-order">第 {{ sIdx + 1 }} 步</span>
+                      <span class="step-name">{{ step.stepName }}</span>
+                      <van-tag v-if="step.stepType" size="medium" :type="getStepTagType(step.stepType)" plain>
+                        {{ getStepTypeName(step.stepType) }}
+                      </van-tag>
+                      <van-tag v-if="step.timeCost && step.timeCost > 0" size="medium" type="primary">
+                        <van-icon name="clock-o" size="11" />
+                        {{ step.timeCost }}分钟
+                      </van-tag>
+                    </div>
+                    <div v-if="getValidStepImages(step, sIdx).length" class="step-image-grid">
+                      <img
+                        v-for="(img, iIdx) in getValidStepImages(step, sIdx)"
+                        :key="iIdx"
+                        :src="img"
+                        alt=""
+                        class="step-image"
+                        :class="'step-image-' + getValidStepImages(step, sIdx).length"
+                        @error="onStepImageError(sIdx, iIdx)"
+                        @click="previewProcessImage(step, sIdx, iIdx)"
+                      />
+                    </div>
+                    <div v-else class="step-no-image">
+                      <van-icon name="photo-o" />
+                      <span>本步暂无配图</span>
+                    </div>
+                    <p v-if="step.description" class="step-desc">{{ step.description }}</p>
+                    <p v-if="step.tips" class="step-tips">
+                      <van-icon name="bulb-o" class="bulb-icon" />
+                      {{ step.tips }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </van-tab>
+
+          <van-tab title="过程图集" name="processList" v-if="(!work.steps || !work.steps.length) && validProcessImages.length">
+            <div class="tab-content-wrap">
+              <div class="process-list list-in-drawer">
+                <div
+                  v-for="(img, idx) in validProcessImages"
+                  :key="idx"
+                  class="process-list-item"
+                  @click="previewProcessListImage(idx)"
+                >
+                  <div class="process-index">{{ idx + 1 }}</div>
+                  <img :src="img" alt="" @error="onImageError(idx, 'process')" />
+                </div>
+              </div>
+            </div>
+          </van-tab>
+        </van-tabs>
+      </div>
+    </van-popup>
 
     <van-popup
       v-model:show="showRetroPopup"
@@ -407,8 +447,9 @@ const loading = ref(false)
 const loadError = ref('')
 const failedImages = ref(new Set())
 const stepFailedImages = ref(new Set())
-const galleryTab = ref('finished')
 const finishedIndex = ref(0)
+const showProcessDrawer = ref(false)
+const processTab = ref('stepReader')
 
 const retrospective = ref(null)
 const showRetroPopup = ref(false)
@@ -447,7 +488,7 @@ const validProcessImages = computed(() => {
 const hasProcessContent = computed(() => {
   if (!work.value) return false
   if (work.value.steps && work.value.steps.length) {
-    return work.value.steps.some((step, sIdx) => getValidStepImages(step, sIdx).length > 0)
+    return true
   }
   return validProcessImages.value.length > 0
 })
@@ -525,9 +566,14 @@ const previewProcessListImage = (idx) => {
   }
 }
 
-watch(galleryTab, () => {
-  finishedIndex.value = 0
-})
+const openProcessDrawer = () => {
+  if (work.value?.steps && work.value.steps.length) {
+    processTab.value = 'stepReader'
+  } else {
+    processTab.value = 'processList'
+  }
+  showProcessDrawer.value = true
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -629,7 +675,6 @@ const saveRetro = async () => {
     showRetroPopup.value = false
     await loadRetrospective()
   } catch {
-    // 错误提示已由请求拦截器处理
   } finally {
     retroSaving.value = false
   }
@@ -646,7 +691,6 @@ const handleDeleteRetro = () => {
         showToast('已删除复盘记录')
         retrospective.value = null
       } catch {
-        // 错误提示已由请求拦截器处理
       }
     })
     .catch(() => {})
@@ -719,32 +763,8 @@ onMounted(() => loadWorkDetail())
   border-bottom: 1px solid #ffe58f;
 }
 
-.gallery-tabs-wrapper {
-  background: #fff;
-}
-
-.gallery-tabs :deep(.van-tabs__nav) {
-  background: linear-gradient(180deg, #faf5ef 0%, #fff 100%);
-}
-
-.gallery-tabs :deep(.van-tab) {
-  font-size: 15px;
-  font-weight: 500;
-  color: #888;
-}
-
-.gallery-tabs :deep(.van-tab--active) {
-  color: #8b5a2b;
-  font-weight: 600;
-}
-
-.gallery-tabs :deep(.van-tabs__line) {
-  background: linear-gradient(90deg, #8b5a2b, #cd853f);
-  border-radius: 2px;
-}
-
-.gallery-cabin {
-  background: #fff;
+.gallery-wrapper {
+  background: linear-gradient(180deg, #fdf9f5 0%, #fff 100%);
 }
 
 .cabin-header {
@@ -770,10 +790,6 @@ onMounted(() => loadWorkDetail())
 .cabin-subtitle {
   font-size: 13px;
   color: #999;
-}
-
-.finished-cabin {
-  background: linear-gradient(180deg, #fdf9f5 0%, #fff 100%);
 }
 
 .finished-swiper {
@@ -830,221 +846,6 @@ onMounted(() => loadWorkDetail())
   object-fit: cover;
 }
 
-.process-cabin {
-  background: linear-gradient(180deg, #f5faf5 0%, #fff 100%);
-}
-
-.process-timeline {
-  padding: 16px;
-}
-
-.total-time-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, #fef7ed 0%, #fff5e6 100%);
-  border-radius: 12px;
-  margin-bottom: 20px;
-  border: 1px solid #f5e6d3;
-}
-
-.clock-icon {
-  font-size: 20px;
-  color: #8b5a2b;
-}
-
-.total-time-label {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
-}
-
-.total-time-value {
-  margin-left: auto;
-  font-size: 16px;
-  font-weight: 700;
-  color: #8b5a2b;
-}
-
-.timeline-item {
-  display: flex;
-  gap: 12px;
-  padding-bottom: 24px;
-}
-
-.timeline-item:last-child {
-  padding-bottom: 0;
-}
-
-.timeline-node {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-  width: 36px;
-}
-
-.node-circle {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  z-index: 1;
-}
-
-.node-line {
-  flex: 1;
-  width: 2px;
-  margin-top: 4px;
-  background: linear-gradient(180deg, #e0d0b8 0%, #f0e6d8 100%);
-}
-
-.timeline-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.step-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-
-.step-order {
-  font-size: 12px;
-  font-weight: 600;
-  color: #fff;
-  background: linear-gradient(135deg, #8b5a2b, #a0522d);
-  padding: 2px 10px;
-  border-radius: 10px;
-}
-
-.step-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
-}
-
-.step-image-grid {
-  display: grid;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.step-image-grid.step-image-1 {
-  grid-template-columns: 1fr;
-}
-
-.step-image-grid.step-image-2 {
-  grid-template-columns: 1fr 1fr;
-}
-
-.step-image-grid.step-image-3 {
-  grid-template-columns: 1fr 1fr;
-}
-
-.step-image-grid.step-image-3 .step-image:first-child {
-  grid-column: span 2;
-}
-
-.step-image-grid.step-image-4,
-.step-image-grid.step-image-5 {
-  grid-template-columns: 1fr 1fr;
-}
-
-.step-image {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: cover;
-  border-radius: 8px;
-  background: #f5f5f5;
-}
-
-.step-no-image {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 16px;
-  background: #fafafa;
-  border-radius: 8px;
-  color: #aaa;
-  font-size: 13px;
-  margin-bottom: 10px;
-}
-
-.step-desc {
-  font-size: 14px;
-  line-height: 1.7;
-  color: #555;
-  margin: 0 0 8px;
-  white-space: pre-wrap;
-}
-
-.step-tips {
-  display: flex;
-  gap: 6px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #e65100;
-  background: #fff8e1;
-  padding: 10px 12px;
-  border-radius: 8px;
-  margin: 0;
-  border-left: 3px solid #ffa000;
-}
-
-.bulb-icon {
-  flex-shrink: 0;
-  color: #ffa000;
-  font-size: 15px;
-  margin-top: 2px;
-}
-
-.process-list {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.process-list-item {
-  position: relative;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #f5f5f5;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.process-list-item img {
-  width: 100%;
-  display: block;
-}
-
-.process-index {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(139, 90, 43, 0.9);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
 .image-placeholder {
   width: 100%;
   aspect-ratio: 4/3;
@@ -1099,6 +900,7 @@ onMounted(() => loadWorkDetail())
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .stats {
@@ -1116,14 +918,61 @@ onMounted(() => loadWorkDetail())
   white-space: pre-wrap;
 }
 
-.materials-text {
-  margin-top: 10px;
-  font-size: 13px;
-  color: #888;
-  background: #faf7f3;
-  padding: 10px 12px;
-  border-radius: 6px;
-  border-left: 3px solid #d4b896;
+.process-entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #fef7ed 0%, #fff5e6 100%);
+  border-radius: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #f5e6d3;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.process-entry-card:active {
+  transform: scale(0.98);
+  background: linear-gradient(135deg, #fdf0dd 0%, #fcecd6 100%);
+}
+
+.process-entry-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.process-entry-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #8b5a2b, #a0522d);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(139, 90, 43, 0.25);
+}
+
+.process-entry-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.process-entry-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #8b5a2b;
+}
+
+.process-entry-subtitle {
+  font-size: 12px;
+  color: #a08060;
+}
+
+.process-entry-right {
+  padding-right: 4px;
 }
 
 .craft-highlights {
@@ -1170,6 +1019,10 @@ onMounted(() => loadWorkDetail())
 
 .craft-icon {
   font-size: 14px;
+}
+
+.craft-name {
+  font-size: 13px;
 }
 
 .difficulty-tag {
@@ -1387,6 +1240,294 @@ onMounted(() => loadWorkDetail())
   margin: 0;
   text-align: center;
   line-height: 1.6;
+}
+
+.detail-bottom-spacer {
+  height: 24px;
+}
+
+.process-drawer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.drawer-header {
+  padding: 16px 20px 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #f0e6d8;
+  background: linear-gradient(135deg, #fdf8f0 0%, #faf0e0 100%);
+}
+
+.drawer-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: #8b5a2b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drawer-meta {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: rgba(139, 90, 43, 0.1);
+  border-radius: 12px;
+  color: #8b5a2b;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.process-tabs :deep(.van-tabs__nav) {
+  background: #fff;
+  border-bottom: 1px solid #f0e6d8;
+}
+
+.process-tabs :deep(.van-tab) {
+  font-size: 14px;
+  color: #888;
+}
+
+.process-tabs :deep(.van-tab--active) {
+  color: #8b5a2b;
+  font-weight: 600;
+}
+
+.process-tabs :deep(.van-tabs__line) {
+  background: linear-gradient(90deg, #8b5a2b, #cd853f);
+  border-radius: 2px;
+}
+
+.tab-content-wrap {
+  padding: 0;
+  height: calc(85vh - 120px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+}
+
+.timeline-in-drawer {
+  padding: 16px;
+}
+
+.process-timeline {
+  padding: 16px;
+}
+
+.total-time-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #fef7ed 0%, #fff5e6 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #f5e6d3;
+}
+
+.clock-icon {
+  font-size: 20px;
+  color: #8b5a2b;
+}
+
+.total-time-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.total-time-value {
+  margin-left: auto;
+  font-size: 16px;
+  font-weight: 700;
+  color: #8b5a2b;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 24px;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 36px;
+}
+
+.node-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.node-line {
+  flex: 1;
+  width: 2px;
+  margin-top: 4px;
+  background: linear-gradient(180deg, #e0d0b8 0%, #f0e6d8 100%);
+}
+
+.timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.step-order {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #8b5a2b, #a0522d);
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+
+.step-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.step-image-grid {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.step-image-grid.step-image-1 {
+  grid-template-columns: 1fr;
+}
+
+.step-image-grid.step-image-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.step-image-grid.step-image-3 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.step-image-grid.step-image-3 .step-image:first-child {
+  grid-column: span 2;
+}
+
+.step-image-grid.step-image-4,
+.step-image-grid.step-image-5 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.step-image {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #f5f5f5;
+}
+
+.step-no-image {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  color: #aaa;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.step-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555;
+  margin: 0 0 8px;
+  white-space: pre-wrap;
+}
+
+.step-tips {
+  display: flex;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e65100;
+  background: #fff8e1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 0;
+  border-left: 3px solid #ffa000;
+}
+
+.bulb-icon {
+  flex-shrink: 0;
+  color: #ffa000;
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.process-list {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.list-in-drawer {
+  padding: 16px;
+}
+
+.process-list-item {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5f5f5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.process-list-item img {
+  width: 100%;
+  display: block;
+}
+
+.process-index {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(139, 90, 43, 0.9);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .retro-popup {

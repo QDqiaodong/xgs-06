@@ -34,7 +34,7 @@
         </div>
 
         <div class="craft-card-stats">
-          <div class="stat-item">
+          <div class="stat-item" @click="activeStatTab = 'status'">
             <span class="stat-value">{{ craftProfile.totalWorks || 0 }}</span>
             <span class="stat-label">累计作品</span>
           </div>
@@ -43,33 +43,129 @@
             <span class="stat-value">{{ craftProfile.recentCompleted || 0 }}</span>
             <span class="stat-label">近30天完成</span>
           </div>
-        </div>
-
-        <div class="craft-card-section" v-if="craftProfile.topCategories && craftProfile.topCategories.length">
-          <div class="section-label">擅长品类</div>
-          <div class="tag-list">
-            <span
-              v-for="cat in craftProfile.topCategories"
-              :key="'cat-' + cat.id"
-              class="craft-tag category-tag"
-            >
-              {{ cat.name }}<small v-if="cat.count"> {{ cat.count }}件</small>
-            </span>
+          <div class="stat-divider"></div>
+          <div class="stat-item" @click="activeStatTab = 'category'">
+            <span class="stat-value">{{ craftProfile.categoryStats?.length || 0 }}</span>
+            <span class="stat-label">覆盖品类</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item" @click="activeStatTab = 'craft'">
+            <span class="stat-value">{{ craftProfile.craftTypeStats?.length || 0 }}</span>
+            <span class="stat-label">涉及工艺</span>
           </div>
         </div>
 
-        <div class="craft-card-section" v-if="craftProfile.topCraftTypes && craftProfile.topCraftTypes.length">
-          <div class="section-label">常练工艺</div>
-          <div class="tag-list">
-            <span
-              v-for="craft in craftProfile.topCraftTypes"
-              :key="'craft-' + craft.id"
-              class="craft-tag craft-badge"
-              :class="getCraftClass(craft.name)"
-            >
-              <span class="craft-badge-icon">{{ getCraftInfoByName(craft.name).icon }}</span>
-              {{ craft.name }}<small v-if="craft.count"> {{ craft.count }}件</small>
-            </span>
+        <div class="stats-tabs">
+          <div
+            class="stats-tab"
+            :class="{ active: activeStatTab === 'status' }"
+            @click="activeStatTab = 'status'"
+          >
+            <van-icon name="flag-o" size="14" />
+            <span>按状态</span>
+          </div>
+          <div
+            class="stats-tab"
+            :class="{ active: activeStatTab === 'category' }"
+            @click="activeStatTab = 'category'"
+          >
+            <van-icon name="cluster-o" size="14" />
+            <span>按品类</span>
+          </div>
+          <div
+            class="stats-tab"
+            :class="{ active: activeStatTab === 'craft' }"
+            @click="activeStatTab = 'craft'"
+          >
+            <van-icon name="wap-nav" size="14" />
+            <span>按工艺</span>
+          </div>
+        </div>
+
+        <div class="stats-panel">
+          <div v-show="activeStatTab === 'status'" class="status-panel">
+            <div v-if="hasStatusStats" class="status-list">
+              <div
+                v-for="item in displayStatusStats"
+                :key="item.status"
+                class="status-bar-item"
+              >
+                <div class="bar-label-row">
+                  <span class="bar-label" :class="'bar-label--' + item.status">
+                    <span class="bar-icon">{{ getWorkStatusIcon(item.status) }}</span>
+                    {{ item.statusName }}
+                  </span>
+                  <span class="bar-count">{{ item.count }}件</span>
+                </div>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill"
+                    :class="'bar-fill--' + item.status"
+                    :style="{ width: getBarPercent(item.count) + '%' }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="stats-empty">
+              <van-icon name="records" size="28" color="#ddd" />
+              <span>暂无状态分布数据</span>
+            </div>
+          </div>
+
+          <div v-show="activeStatTab === 'category'" class="category-panel">
+            <div v-if="hasCategoryStats" class="category-list">
+              <div
+                v-for="item in displayCategoryStats"
+                :key="item.id"
+                class="category-bar-item"
+              >
+                <div class="bar-label-row">
+                  <span class="bar-label category-bar-label">
+                    <span class="bar-dot"></span>
+                    {{ item.name }}
+                  </span>
+                  <span class="bar-count">{{ item.count }}件</span>
+                </div>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill bar-fill--category"
+                    :style="{ width: getBarPercent(item.count) + '%' }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="stats-empty">
+              <van-icon name="records" size="28" color="#ddd" />
+              <span>暂无品类分布数据</span>
+            </div>
+          </div>
+
+          <div v-show="activeStatTab === 'craft'" class="craft-panel">
+            <div v-if="hasCraftStats" class="craft-list">
+              <div
+                v-for="item in displayCraftStats"
+                :key="item.id"
+                class="craft-bar-item"
+              >
+                <div class="bar-label-row">
+                  <span class="bar-label craft-bar-label" :class="getCraftClass(item.name)">
+                    <span class="craft-bar-icon">{{ getCraftInfoByName(item.name).icon }}</span>
+                    {{ item.name }}
+                  </span>
+                  <span class="bar-count">{{ item.count }}件</span>
+                </div>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill bar-fill--craft"
+                    :style="{ width: getBarPercent(item.count) + '%' }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="stats-empty">
+              <van-icon name="records" size="28" color="#ddd" />
+              <span>暂无工艺分布数据</span>
+            </div>
           </div>
         </div>
 
@@ -126,24 +222,86 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { getCraftProfile, getMyRetrospectives } from '@/api'
-import { getCraftInfoByName, getCraftClass } from '@/utils/craftConfig'
+import { getCraftInfoByName, getCraftClass, getWorkStatusInfo } from '@/utils/craftConfig'
 import BottomNav from '@/components/BottomNav.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const craftProfile = ref(null)
 const retroCount = ref(0)
+const activeStatTab = ref('status')
 
 const isEmptyProfile = computed(() => {
   if (!craftProfile.value) return true
   const p = craftProfile.value
   return (
-    (!p.topCategories || p.topCategories.length === 0) &&
-    (!p.topCraftTypes || p.topCraftTypes.length === 0) &&
+    (!p.categoryStats || p.categoryStats.length === 0) &&
+    (!p.craftTypeStats || p.craftTypeStats.length === 0) &&
+    (!p.workStatusStats || p.workStatusStats.length === 0) &&
     (!p.commonMaterials || p.commonMaterials.length === 0) &&
     (!p.totalWorks || p.totalWorks === 0)
   )
 })
+
+const maxStatCount = computed(() => {
+  const counts = []
+  if (craftProfile.value?.workStatusStats?.length) {
+    counts.push(...craftProfile.value.workStatusStats.map(s => s.count))
+  }
+  if (craftProfile.value?.categoryStats?.length) {
+    counts.push(...craftProfile.value.categoryStats.map(s => s.count))
+  }
+  if (craftProfile.value?.craftTypeStats?.length) {
+    counts.push(...craftProfile.value.craftTypeStats.map(s => s.count))
+  }
+  return counts.length ? Math.max(...counts) : 0
+})
+
+const hasStatusStats = computed(() => {
+  return craftProfile.value?.workStatusStats?.length > 0
+})
+
+const hasCategoryStats = computed(() => {
+  return craftProfile.value?.categoryStats?.length > 0
+})
+
+const hasCraftStats = computed(() => {
+  return craftProfile.value?.craftTypeStats?.length > 0
+})
+
+const displayStatusStats = computed(() => {
+  if (!craftProfile.value?.workStatusStats) return []
+  const statusOrder = ['finished', 'practice', 'semi_finished', 'repair']
+  const sorted = [...craftProfile.value.workStatusStats].sort((a, b) => {
+    const ia = statusOrder.indexOf(a.status)
+    const ib = statusOrder.indexOf(b.status)
+    if (ia === -1 && ib === -1) return b.count - a.count
+    if (ia === -1) return 1
+    if (ib === -1) return -1
+    return ia - ib
+  })
+  return sorted
+})
+
+const displayCategoryStats = computed(() => {
+  if (!craftProfile.value?.categoryStats) return []
+  return [...craftProfile.value.categoryStats].sort((a, b) => b.count - a.count)
+})
+
+const displayCraftStats = computed(() => {
+  if (!craftProfile.value?.craftTypeStats) return []
+  return [...craftProfile.value.craftTypeStats].sort((a, b) => b.count - a.count)
+})
+
+const getBarPercent = (count) => {
+  if (!maxStatCount.value) return 0
+  return Math.max(5, (count / maxStatCount.value) * 100)
+}
+
+const getWorkStatusIcon = (status) => {
+  const info = getWorkStatusInfo(status)
+  return info?.icon || '📄'
+}
 
 const loadCraftProfile = async () => {
   if (userStore.userInfo?.id) {
@@ -254,6 +412,7 @@ watch(() => userStore.userInfo?.id, () => {
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
 }
 
 .stat-value {
@@ -273,8 +432,165 @@ watch(() => userStore.userInfo?.id, () => {
   background: #ddd;
 }
 
+.stats-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 14px;
+  gap: 4px;
+}
+
+.stats-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #8b7355;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.stats-tab.active {
+  background: linear-gradient(135deg, #8b5a2b, #a0522d);
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(139, 90, 43, 0.25);
+}
+
+.stats-panel {
+  min-height: 120px;
+}
+
+.stats-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 0;
+  font-size: 13px;
+  color: #bbb;
+}
+
+.status-list,
+.category-list,
+.craft-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bar-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.bar-label {
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bar-icon {
+  font-size: 14px;
+}
+
+.bar-count {
+  font-size: 12px;
+  color: #888;
+  font-weight: 600;
+}
+
+.bar-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.bar-fill--finished {
+  background: linear-gradient(90deg, #52c41a, #73d13d);
+}
+
+.bar-label--finished {
+  color: #389e0d;
+}
+
+.bar-fill--practice {
+  background: linear-gradient(90deg, #8c8c8c, #a6a6a6);
+}
+
+.bar-label--practice {
+  color: #595959;
+}
+
+.bar-fill--repair {
+  background: linear-gradient(90deg, #fa8c16, #ffa940);
+}
+
+.bar-label--repair {
+  color: #d46b08;
+}
+
+.bar-fill--semi_finished {
+  background: linear-gradient(90deg, #1890ff, #40a9ff);
+}
+
+.bar-label--semi_finished {
+  color: #096dd9;
+}
+
+.bar-fill--category {
+  background: linear-gradient(90deg, #c08457, #d4a373);
+}
+
+.category-bar-label {
+  color: #8b6914;
+}
+
+.bar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c08457;
+}
+
+.bar-fill--craft {
+  background: linear-gradient(90deg, #722ed1, #9254de);
+}
+
+.craft-bar-label {
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: rgba(114, 46, 209, 0.1);
+  color: #531dab;
+}
+
+.craft-bar-icon {
+  font-size: 13px;
+}
+
 .craft-card-section {
+  margin-top: 14px;
   margin-bottom: 12px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(192, 132, 87, 0.3);
 }
 
 .craft-card-section:last-of-type {

@@ -748,6 +748,15 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
         return trimmed;
     }
 
+    private static final Map<String, String> WORK_STATUS_NAME_MAP;
+    static {
+        WORK_STATUS_NAME_MAP = new LinkedHashMap<>();
+        WORK_STATUS_NAME_MAP.put("finished", "正式成品");
+        WORK_STATUS_NAME_MAP.put("practice", "练习样件");
+        WORK_STATUS_NAME_MAP.put("repair", "修复件");
+        WORK_STATUS_NAME_MAP.put("semi_finished", "半成品");
+    }
+
     @Override
     public CraftProfileDTO getUserCraftProfile(Long userId) {
         CraftProfileDTO profile = new CraftProfileDTO();
@@ -780,6 +789,38 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements Wo
 
         List<String> commonMaterials = extractCommonMaterials(userId);
         profile.setCommonMaterials(commonMaterials);
+
+        List<Map<String, Object>> allCatRows = baseMapper.selectAllCategoryStats(userId);
+        List<CraftProfileDTO.CategoryStat> categoryStats = new ArrayList<>();
+        for (Map<String, Object> row : allCatRows) {
+            Long id = row.get("id") != null ? ((Number) row.get("id")).longValue() : null;
+            String name = (String) row.get("name");
+            Integer count = row.get("count") != null ? ((Number) row.get("count")).intValue() : 0;
+            categoryStats.add(new CraftProfileDTO.CategoryStat(id, name, count));
+        }
+        profile.setCategoryStats(categoryStats);
+
+        List<Map<String, Object>> allCraftRows = baseMapper.selectAllCraftTypeStats(userId);
+        List<CraftProfileDTO.CategoryStat> craftTypeStats = new ArrayList<>();
+        for (Map<String, Object> row : allCraftRows) {
+            Long id = row.get("id") != null ? ((Number) row.get("id")).longValue() : null;
+            String name = (String) row.get("name");
+            Integer count = row.get("count") != null ? ((Number) row.get("count")).intValue() : 0;
+            craftTypeStats.add(new CraftProfileDTO.CategoryStat(id, name, count));
+        }
+        profile.setCraftTypeStats(craftTypeStats);
+
+        List<Map<String, Object>> statusRows = baseMapper.selectWorkStatusStats(userId);
+        List<CraftProfileDTO.WorkStatusStat> workStatusStats = new ArrayList<>();
+        for (Map<String, Object> row : statusRows) {
+            String status = (String) row.get("status");
+            Integer count = row.get("count") != null ? ((Number) row.get("count")).intValue() : 0;
+            if (status != null && !status.isEmpty()) {
+                String statusName = WORK_STATUS_NAME_MAP.getOrDefault(status, status);
+                workStatusStats.add(new CraftProfileDTO.WorkStatusStat(status, statusName, count));
+            }
+        }
+        profile.setWorkStatusStats(workStatusStats);
 
         return profile;
     }

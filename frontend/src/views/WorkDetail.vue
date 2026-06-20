@@ -211,17 +211,103 @@
 
         <van-divider v-if="!work.steps || !work.steps.length">制作流程</van-divider>
         <p class="content-text" v-if="(!work.steps || !work.steps.length) && work.craftSteps">{{ work.craftSteps }}</p>
+
+        <div class="retrospective-card" v-if="retrospective || isAuthor">
+          <div class="retro-header">
+            <van-icon name="records-o" class="retro-icon" />
+            <span class="retro-title">制作复盘记录</span>
+            <span class="retro-edit-btn" v-if="isAuthor" @click="openRetroEditor">
+              <van-icon :name="retrospective ? 'edit-o' : 'add-o'" />
+              {{ retrospective ? '编辑' : '添加复盘' }}
+            </span>
+          </div>
+
+          <div class="retro-body" v-if="retrospective">
+            <div class="retro-item" v-if="retrospective.reworkPoints">
+              <div class="retro-item-label"><van-icon name="warning-o" /> 返工点</div>
+              <p class="retro-item-text">{{ retrospective.reworkPoints }}</p>
+            </div>
+            <div class="retro-item" v-if="retrospective.lossReasons">
+              <div class="retro-item-label"><van-icon name="info-o" /> 损耗原因</div>
+              <p class="retro-item-text">{{ retrospective.lossReasons }}</p>
+            </div>
+            <div class="retro-item" v-if="retrospective.improvements">
+              <div class="retro-item-label retro-improve-label"><van-icon name="bulb-o" /> 下次改进方向</div>
+              <p class="retro-item-text retro-improve-text">{{ retrospective.improvements }}</p>
+            </div>
+            <div class="retro-footer">
+              <span>更新于 {{ formatTime(retrospective.updateTime) }}</span>
+              <span class="retro-delete" v-if="isAuthor" @click="handleDeleteRetro">删除</span>
+            </div>
+          </div>
+
+          <div class="retro-empty" v-else>
+            <van-icon name="edit" size="28" color="#c8aa84" />
+            <p>作品完成后可记录返工点、损耗原因与改进方向，沉淀制作经验</p>
+          </div>
+        </div>
       </div>
     </div>
+
+    <van-popup
+      v-model:show="showRetroPopup"
+      round
+      position="bottom"
+      closeable
+      close-icon-position="top-right"
+      :style="{ height: '72%' }"
+    >
+      <div class="retro-popup">
+        <div class="retro-popup-title">{{ retrospective ? '编辑复盘记录' : '添加复盘记录' }}</div>
+        <div class="retro-popup-tip">记录本次制作的得失，沉淀可复用的经验</div>
+        <van-cell-group inset class="retro-form">
+          <van-field
+            v-model="retroForm.reworkPoints"
+            label="返工点"
+            type="textarea"
+            placeholder="记录需要返工的环节与问题"
+            rows="2"
+            autosize
+            maxlength="500"
+            show-word-limit
+          />
+          <van-field
+            v-model="retroForm.lossReasons"
+            label="损耗原因"
+            type="textarea"
+            placeholder="分析皮料、五金等损耗成因"
+            rows="2"
+            autosize
+            maxlength="500"
+            show-word-limit
+          />
+          <van-field
+            v-model="retroForm.improvements"
+            label="下次改进"
+            type="textarea"
+            placeholder="针对性的改进方向与建议"
+            rows="2"
+            autosize
+            maxlength="500"
+            show-word-limit
+          />
+        </van-cell-group>
+        <div class="retro-popup-actions">
+          <van-button round block type="primary" :loading="retroSaving" @click="saveRetro">
+            保存复盘
+          </van-button>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { getWorkDetail, toggleFavorite } from '@/api'
+import { getWorkDetail, toggleFavorite, getRetrospective, saveRetrospective, deleteRetrospective } from '@/api'
 import { useUserStore } from '@/store/user'
-import { showToast, showImagePreview } from 'vant'
+import { showToast, showImagePreview, showConfirmDialog } from 'vant'
 import { getStepTypeInfo, getCraftInfoByName, getCraftClass, getStepClass, getDifficultyInfo } from '@/utils/craftConfig'
 import CraftStepReader from '@/components/CraftStepReader.vue'
 import MaterialSummary from '@/components/MaterialSummary.vue'
@@ -235,6 +321,15 @@ const failedImages = ref(new Set())
 const stepFailedImages = ref(new Set())
 const galleryTab = ref('finished')
 const finishedIndex = ref(0)
+
+const retrospective = ref(null)
+const showRetroPopup = ref(false)
+const retroSaving = ref(false)
+const retroForm = ref({ reworkPoints: '', lossReasons: '', improvements: '' })
+
+const isAuthor = computed(() => {
+  return !!(work.value && work.value.userId && userStore.userInfo && work.value.userId === userStore.userInfo.id)
+})
 
 const getStepTypeClass = (type) => getStepClass(type)
 const getStepIcon = (type) => getStepTypeInfo(type).icon
@@ -363,6 +458,71 @@ const handleFavorite = async () => {
   showToast(work.value.isFavorite ? '收藏成功' : '已取消收藏')
 }
 
+const loadRetrospective = async () => {
+  if (!route.params.id) {
+    retrospective.value = null
+    return
+  }
+  try {
+    retrospective.value = await getRetrospective(route.params.id, { silentError: true })
+  } catch {
+    retrospective.value = null
+  }
+}
+
+const openRetroEditor = () => {
+  if (retrospective.value) {
+    retroForm.value = {
+      reworkPoints: retrospective.value.reworkPoints || '',
+      lossReasons: retrospective.value.lossReasons || '',
+      improvements: retrospective.value.improvements || ''
+    }
+  } else {
+    retroForm.value = { reworkPoints: '', lossReasons: '', improvements: '' }
+  }
+  showRetroPopup.value = true
+}
+
+const saveRetro = async () => {
+  if (!retroForm.value.reworkPoints.trim() && !retroForm.value.lossReasons.trim() && !retroForm.value.improvements.trim()) {
+    showToast('请至少填写一项复盘内容')
+    return
+  }
+  retroSaving.value = true
+  try {
+    await saveRetrospective({
+      workId: Number(route.params.id),
+      reworkPoints: retroForm.value.reworkPoints.trim(),
+      lossReasons: retroForm.value.lossReasons.trim(),
+      improvements: retroForm.value.improvements.trim()
+    })
+    showToast('复盘记录已保存')
+    showRetroPopup.value = false
+    await loadRetrospective()
+  } catch {
+    // 错误提示已由请求拦截器处理
+  } finally {
+    retroSaving.value = false
+  }
+}
+
+const handleDeleteRetro = () => {
+  showConfirmDialog({
+    title: '删除复盘记录',
+    message: '确定删除该作品的复盘记录吗？删除后可在个人页的复盘列表中重新添加。'
+  })
+    .then(async () => {
+      try {
+        await deleteRetrospective(route.params.id)
+        showToast('已删除复盘记录')
+        retrospective.value = null
+      } catch {
+        // 错误提示已由请求拦截器处理
+      }
+    })
+    .catch(() => {})
+}
+
 const loadWorkDetail = async (retryCount = 8) => {
   loading.value = true
   loadError.value = ''
@@ -374,7 +534,9 @@ const loadWorkDetail = async (retryCount = 8) => {
         work.value = await getWorkDetail(route.params.id, { silentError: true })
         if (!work.value) {
           loadError.value = '作品不存在或已下架'
+          return
         }
+        loadRetrospective()
         return
       } catch (error) {
         if (attempt === retryCount) {
@@ -918,5 +1080,146 @@ onMounted(() => loadWorkDetail())
   background: #fff1f0;
   color: #cf1322;
   border: 1px solid #ffa39e;
+}
+
+.retrospective-card {
+  margin-top: 20px;
+  background: linear-gradient(135deg, #f7fafa 0%, #fff 100%);
+  border: 1px solid #d9e6e6;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.retro-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.retro-icon {
+  font-size: 20px;
+  color: #2e7d6f;
+}
+
+.retro-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2e7d6f;
+}
+
+.retro-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  color: #2e7d6f;
+  background: rgba(46, 125, 111, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.retro-item {
+  margin-bottom: 12px;
+}
+
+.retro-item:last-of-type {
+  margin-bottom: 0;
+}
+
+.retro-item-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #8b5a2b;
+  margin-bottom: 5px;
+}
+
+.retro-item-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555;
+  margin: 0;
+  white-space: pre-wrap;
+  padding-left: 4px;
+  border-left: 3px solid #e8d5bf;
+  padding-left: 10px;
+}
+
+.retro-improve-label {
+  color: #2e7d6f;
+}
+
+.retro-improve-text {
+  border-left-color: #b3d9d2;
+}
+
+.retro-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #e0d8cf;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.retro-delete {
+  color: #ee0a24;
+}
+
+.retro-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0 4px;
+}
+
+.retro-empty p {
+  font-size: 13px;
+  color: #b0a090;
+  margin: 0;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.retro-popup {
+  padding: 20px 0 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.retro-popup-title {
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+  color: #333;
+}
+
+.retro-popup-tip {
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.retro-form {
+  margin-top: 12px;
+}
+
+.retro-popup-actions {
+  margin-top: auto;
+  padding: 16px;
+}
+
+.retro-popup-actions :deep(.van-button--primary) {
+  background: linear-gradient(135deg, #2e7d6f, #3a9d8c);
+  border: none;
 }
 </style>

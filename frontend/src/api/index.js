@@ -23,3 +23,8 @@ export const getMaterialReference = () => request.get('/work/material-reference'
 
 export const toggleFavorite = (workId) => request.post('/favorite/toggle', null, { params: { workId } })
 export const checkFavorite = (workId) => request.get('/favorite/check', { params: { workId } })
+
+export const getRetrospective = (workId) => request.get(`/retrospective/work/${workId}`)
+export const getMyRetrospectives = (params) => request.get('/retrospective/my', { params })
+export const saveRetrospective = (data) => request.post('/retrospective', data)
+export const deleteRetrospective = (workId) => request.delete(`/retrospective/work/${workId}`)

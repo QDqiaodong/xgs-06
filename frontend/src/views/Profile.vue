@@ -99,6 +99,12 @@
         <van-cell title="我的收藏" is-link @click="router.push('/favorites')">
           <template #icon><van-icon name="star-o" size="20" /></template>
         </van-cell>
+        <van-cell title="我的复盘记录" is-link @click="router.push('/my-retrospectives')">
+          <template #icon><van-icon name="records-o" size="20" /></template>
+          <template #value>
+            <span class="retro-count" v-if="retroCount > 0">{{ retroCount }} 篇</span>
+          </template>
+        </van-cell>
       </van-cell-group>
 
       <van-cell-group inset class="menu-group">
@@ -119,13 +125,14 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { getCraftProfile } from '@/api'
+import { getCraftProfile, getMyRetrospectives } from '@/api'
 import { getCraftInfoByName, getCraftClass } from '@/utils/craftConfig'
 import BottomNav from '@/components/BottomNav.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const craftProfile = ref(null)
+const retroCount = ref(0)
 
 const isEmptyProfile = computed(() => {
   if (!craftProfile.value) return true
@@ -150,9 +157,28 @@ const loadCraftProfile = async () => {
   }
 }
 
-onMounted(loadCraftProfile)
+const loadRetroCount = async () => {
+  if (!userStore.userInfo?.id) {
+    retroCount.value = 0
+    return
+  }
+  try {
+    const res = await getMyRetrospectives({ page: 1, size: 1 })
+    retroCount.value = res?.total || 0
+  } catch {
+    retroCount.value = 0
+  }
+}
 
-watch(() => userStore.userInfo?.id, loadCraftProfile)
+onMounted(() => {
+  loadCraftProfile()
+  loadRetroCount()
+})
+
+watch(() => userStore.userInfo?.id, () => {
+  loadCraftProfile()
+  loadRetroCount()
+})
 </script>
 
 <style scoped>
@@ -315,5 +341,10 @@ watch(() => userStore.userInfo?.id, loadCraftProfile)
 
 .menu-group {
   margin-bottom: 12px;
+}
+
+.retro-count {
+  font-size: 12px;
+  color: #c08457;
 }
 </style>

@@ -39,6 +39,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/my-retrospectives',
+    name: 'MyRetrospectives',
+    component: () => import('@/views/MyRetrospectives.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue'),

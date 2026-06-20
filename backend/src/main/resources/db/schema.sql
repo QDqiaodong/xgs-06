@@ -130,7 +130,7 @@ INSERT INTO t_work (user_id, title, cover, content, materials, material_summary,
  '{"mainMaterials":[{"name":"意大利植鞣革","spec":"2.0mm","quantity":"1.5平方英尺"}],"auxMaterials":[{"name":"麻线","spec":"0.6mm","quantity":"3米"},{"name":"黄铜四合扣","spec":"12mm","quantity":"2套"},{"name":"黄胶","spec":"","quantity":"少量"}],"tools":[{"name":"裁皮刀","spec":"","quantity":"1把"},{"name":"菱斩","spec":"4mm","quantity":"1把"},{"name":"手缝针","spec":"","quantity":"2支"},{"name":"锤子","spec":"","quantity":"1把"},{"name":"橡胶垫","spec":"","quantity":"1块"}]}',
  '主材：意大利植鞣革2.0mm；辅材：麻线0.6mm、黄铜四合扣12mm、黄胶；工具：裁皮刀、菱斩4mm、手缝针、锤子、橡胶垫',
  '1. 裁下料片\n2. 打斩\n3. 缝制\n4. 封边\n5. 安装五金',
- 1, 1, 'beginner', 128, 45, 1),
+ 1, 1, 'intermediate', 128, 45, 1),
 (1, '复古风卡包制作分享', 'https://picsum.photos/400/300?random=2',
  '做了一个复古风格的多卡位卡包，可以放8张卡，还有一个零钱位。',
  '日本枥木皮1.5mm，酒红色，铜质气眼',
@@ -144,7 +144,7 @@ INSERT INTO t_work (user_id, title, cover, content, materials, material_summary,
  '{"mainMaterials":[{"name":"意大利植鞣革皮带条","spec":"38mm宽","quantity":"120cm"}],"auxMaterials":[{"name":"床面处理剂(CMC)","spec":"","quantity":"少量"},{"name":"边油","spec":"深棕色","quantity":"少量"},{"name":"抛光蜡","spec":"","quantity":"少量"}],"tools":[{"name":"裁皮刀","spec":"","quantity":"1把"},{"name":"砂纸","spec":"400/800/1200/2000目","quantity":"各1张"},{"name":"圆木棒","spec":"","quantity":"1根"},{"name":"帆布","spec":"","quantity":"1块"}]}',
  '主材：意大利植鞣革皮带条38mm宽；辅材：床面处理剂(CMC)、边油深棕色、抛光蜡；工具：裁皮刀、砂纸400/800/1200/2000目、圆木棒、帆布',
  '1. 裁皮带\n2. 削薄尾部\n3. 粗磨\n4. 床面处理\n5. 细磨\n6. 抛光',
- 3, 5, 'advanced', 512, 156, 1);
+ 3, 5, 'intermediate', 512, 156, 1);
 
 INSERT INTO t_work_step (work_id, step_name, step_type, time_cost, materials, tips, description, sort) VALUES
 (1, '裁切下料', 'cutting', 30, '意大利植鞣革2.0mm，裁皮刀，钢尺', '注意刀刃角度保持45度，沿钢尺边缘垂直下刀，一次性裁断避免毛边', '根据纸样裁下料片，注意皮料的纹理方向，大面和卡位要合理布局节省皮料', 0),

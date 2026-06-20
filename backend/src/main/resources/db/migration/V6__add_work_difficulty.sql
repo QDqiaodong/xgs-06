@@ -3,7 +3,7 @@ ALTER TABLE t_work ADD COLUMN difficulty VARCHAR(20) DEFAULT NULL COMMENT 'ç‰ˆåž
 CREATE INDEX idx_difficulty ON t_work(difficulty);
 
 UPDATE t_work SET difficulty = CASE
-  WHEN id = 1 THEN 'beginner'
+  WHEN id = 1 THEN 'intermediate'
   WHEN id = 2 THEN 'intermediate'
-  WHEN id = 3 THEN 'advanced'
+  WHEN id = 3 THEN 'intermediate'
 END;

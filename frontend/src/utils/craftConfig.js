@@ -64,6 +64,21 @@ export const getDifficultyInfo = (key) => {
   return DIFFICULTY_LEVELS[key] || null
 }
 
+export const getDifficultyStepRange = (key) => {
+  const idx = DIFFICULTY_ORDER.indexOf(key)
+  if (idx === -1) return ''
+  const level = DIFFICULTY_LEVELS[key]
+  if (level.maxSteps === Infinity) {
+    const prevLevel = DIFFICULTY_LEVELS[DIFFICULTY_ORDER[idx - 1]]
+    return `${prevLevel.maxSteps + 1}步以上`
+  }
+  if (idx === 0) {
+    return `1-${level.maxSteps}步`
+  }
+  const prevLevel = DIFFICULTY_LEVELS[DIFFICULTY_ORDER[idx - 1]]
+  return `${prevLevel.maxSteps + 1}-${level.maxSteps}步`
+}
+
 export const getDifficultyClass = (key) => {
   return key ? `difficulty-badge--${key}` : ''
 }

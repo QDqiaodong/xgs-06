@@ -524,9 +524,7 @@
             </div>
             <div class="diff-detail">{{ DIFFICULTY_LEVELS[key].description }}</div>
             <div class="diff-range">
-              对应步骤：{{ DIFFICULTY_LEVELS[key].maxSteps === Infinity
-                ? `${DIFFICULTY_LEVELS[DIFFICULTY_ORDER[DIFFICULTY_ORDER.indexOf(key) - 1]].maxSteps + 1}步以上`
-                : `1-${DIFFICULTY_LEVELS[key].maxSteps}步` }}
+              对应步骤：{{ getDifficultyStepRange(key) }}
             </div>
           </div>
         </div>
@@ -541,7 +539,7 @@ import { useRouter } from 'vue-router'
 import { getCategories, publishWork } from '@/api'
 import { useUserStore } from '@/store/user'
 import { showToast, showDialog } from 'vant'
-import { CRAFT_STYLES, getStepTypeInfo, DIFFICULTY_LEVELS, DIFFICULTY_ORDER, getSuggestedDifficultyBySteps, getDifficultyInfo } from '@/utils/craftConfig'
+import { CRAFT_STYLES, getStepTypeInfo, DIFFICULTY_LEVELS, DIFFICULTY_ORDER, getSuggestedDifficultyBySteps, getDifficultyInfo, getDifficultyStepRange } from '@/utils/craftConfig'
 import {
   validateAllMaterials,
   validateSingleMaterial,
